@@ -1,0 +1,17 @@
+
+type 'a t
+(*@ invariant 1 < 0 *)
+
+exception Silly
+
+
+val create : int -> int -> 'a t * int
+(*@ (t, silly2) = create silly c
+  checks silly >= 5
+  requires c > 0
+    ensures silly2 < 10
+  raises Silly -> silly = 6*)
+
+val nonsense : 'a t -> 'a t -> 'a t * 'a t
+(*@ (t3, t4) = nonsense t1 t2
+*)

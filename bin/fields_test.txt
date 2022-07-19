@@ -1,0 +1,476 @@
+sigs are
+(((sig_desc
+   (Sig_open
+    ((opn_id (Stdlib)) (opn_override <opaque>) (opn_loc <opaque>)
+     (opn_attrs <opaque>))
+    Ghost))
+  (sig_loc <opaque>))
+ ((sig_desc
+   (Sig_open
+    ((opn_id (Gospelstdlib)) (opn_override <opaque>) (opn_loc <opaque>)
+     (opn_attrs <opaque>))
+    Ghost))
+  (sig_loc <opaque>))
+ ((sig_desc
+   (Sig_type Recursive
+    (((td_ts
+       ((ts_ident ((id_str t) (id_attrs ()) (id_loc <opaque>) (id_tag 1423)))
+        (ts_args ()) (ts_alias ())))
+      (td_params ()) (td_cstrs ()) (td_kind Pty_abstract) (td_private Public)
+      (td_manifest ()) (td_attrs <opaque>)
+      (td_spec
+       (((ty_ephemeral false)
+         (ty_fields
+          ((((ls_name
+              ((id_str oooo) (id_attrs ()) (id_loc <opaque>) (id_tag 1424)))
+             (ls_args
+              (((ty_node
+                 (Tyapp
+                  ((ts_ident
+                    ((id_str t) (id_attrs ()) (id_loc <opaque>)
+                     (id_tag 1423)))
+                   (ts_args ()) (ts_alias ()))
+                  ())))))
+             (ls_value
+              (((ty_node
+                 (Tyapp
+                  ((ts_ident
+                    ((id_str int) (id_attrs ()) (id_loc <opaque>) (id_tag 9)))
+                   (ts_args ()) (ts_alias ()))
+                  ())))))
+             (ls_constr false) (ls_field true))
+            false)
+           (((ls_name
+              ((id_str eeee) (id_attrs ()) (id_loc <opaque>) (id_tag 1425)))
+             (ls_args
+              (((ty_node
+                 (Tyapp
+                  ((ts_ident
+                    ((id_str t) (id_attrs ()) (id_loc <opaque>)
+                     (id_tag 1423)))
+                   (ts_args ()) (ts_alias ()))
+                  ())))))
+             (ls_value
+              (((ty_node
+                 (Tyapp
+                  ((ts_ident
+                    ((id_str list) (id_attrs ()) (id_loc <opaque>)
+                     (id_tag 19)))
+                   (ts_args
+                    (((tv_name
+                       ((id_str a) (id_attrs ()) (id_loc <opaque>)
+                        (id_tag 18))))))
+                   (ts_alias ()))
+                  (((ty_node
+                     (Tyapp
+                      ((ts_ident
+                        ((id_str bool) (id_attrs ()) (id_loc <opaque>)
+                         (id_tag 14)))
+                       (ts_args ()) (ts_alias ()))
+                      ())))))))))
+             (ls_constr false) (ls_field true))
+            false)))
+         (ty_invariants (() ()))
+         (ty_text  "\
+                  \nmodel oooo : int\
+                  \nmodel eeee : bool list\
+                  \n")
+         (ty_loc <opaque>))))
+      (td_loc <opaque>)))
+    Nonghost))
+  (sig_loc <opaque>))
+ ((sig_desc
+   (Sig_val
+    ((vd_name
+      ((id_str silly_create) (id_attrs ()) (id_loc <opaque>) (id_tag 1426)))
+     (vd_type <opaque>) (vd_prim ()) (vd_attrs <opaque>)
+     (vd_args
+      ((Lnone
+        ((vs_name ((id_str c) (id_attrs ()) (id_loc <opaque>) (id_tag 1427)))
+         (vs_ty
+          ((ty_node
+            (Tyapp
+             ((ts_ident
+               ((id_str int) (id_attrs ()) (id_loc <opaque>) (id_tag 9)))
+              (ts_args ()) (ts_alias ()))
+             ()))))))))
+     (vd_ret
+      ((Lnone
+        ((vs_name ((id_str t) (id_attrs ()) (id_loc <opaque>) (id_tag 1428)))
+         (vs_ty
+          ((ty_node
+            (Tyapp
+             ((ts_ident
+               ((id_str int) (id_attrs ()) (id_loc <opaque>) (id_tag 9)))
+              (ts_args ()) (ts_alias ()))
+             ()))))))))
+     (vd_spec
+      (((sp_args
+         ((Lnone
+           ((vs_name
+             ((id_str c) (id_attrs ()) (id_loc <opaque>) (id_tag 1427)))
+            (vs_ty
+             ((ty_node
+               (Tyapp
+                ((ts_ident
+                  ((id_str int) (id_attrs ()) (id_loc <opaque>) (id_tag 9)))
+                 (ts_args ()) (ts_alias ()))
+                ()))))))))
+        (sp_ret
+         ((Lnone
+           ((vs_name
+             ((id_str t) (id_attrs ()) (id_loc <opaque>) (id_tag 1428)))
+            (vs_ty
+             ((ty_node
+               (Tyapp
+                ((ts_ident
+                  ((id_str int) (id_attrs ()) (id_loc <opaque>) (id_tag 9)))
+                 (ts_args ()) (ts_alias ()))
+                ()))))))))
+        (sp_pre
+         (((t_node
+            (Tapp
+             ((ls_name
+               ((id_str "infix >=") (id_attrs ()) (id_loc <opaque>)
+                (id_tag 867)))
+              (ls_args
+               (((ty_node
+                  (Tyapp
+                   ((ts_ident
+                     ((id_str integer) (id_attrs ()) (id_loc <opaque>)
+                      (id_tag 8)))
+                    (ts_args ()) (ts_alias ()))
+                   ())))
+                ((ty_node
+                  (Tyapp
+                   ((ts_ident
+                     ((id_str integer) (id_attrs ()) (id_loc <opaque>)
+                      (id_tag 8)))
+                    (ts_args ()) (ts_alias ()))
+                   ())))))
+              (ls_value ()) (ls_constr false) (ls_field false))
+             (((t_node
+                (Tapp
+                 ((ls_name
+                   ((id_str integer_of_int) (id_attrs ()) (id_loc <opaque>)
+                    (id_tag 902)))
+                  (ls_args
+                   (((ty_node
+                      (Tyapp
+                       ((ts_ident
+                         ((id_str int) (id_attrs ()) (id_loc <opaque>)
+                          (id_tag 9)))
+                        (ts_args ()) (ts_alias ()))
+                       ())))))
+                  (ls_value
+                   (((ty_node
+                      (Tyapp
+                       ((ts_ident
+                         ((id_str integer) (id_attrs ()) (id_loc <opaque>)
+                          (id_tag 8)))
+                        (ts_args ()) (ts_alias ()))
+                       ())))))
+                  (ls_constr false) (ls_field false))
+                 (((t_node
+                    (Tvar
+                     ((vs_name
+                       ((id_str c) (id_attrs ()) (id_loc <opaque>)
+                        (id_tag 1427)))
+                      (vs_ty
+                       ((ty_node
+                         (Tyapp
+                          ((ts_ident
+                            ((id_str int) (id_attrs ()) (id_loc <opaque>)
+                             (id_tag 9)))
+                           (ts_args ()) (ts_alias ()))
+                          ())))))))
+                   (t_ty
+                    (((ty_node
+                       (Tyapp
+                        ((ts_ident
+                          ((id_str int) (id_attrs ()) (id_loc <opaque>)
+                           (id_tag 9)))
+                         (ts_args ()) (ts_alias ()))
+                        ())))))
+                   (t_attrs ()) (t_loc <opaque>)))))
+               (t_ty
+                (((ty_node
+                   (Tyapp
+                    ((ts_ident
+                      ((id_str integer) (id_attrs ()) (id_loc <opaque>)
+                       (id_tag 8)))
+                     (ts_args ()) (ts_alias ()))
+                    ())))))
+               (t_attrs ()) (t_loc <opaque>))
+              ((t_node (Tconst <opaque>))
+               (t_ty
+                (((ty_node
+                   (Tyapp
+                    ((ts_ident
+                      ((id_str integer) (id_attrs ()) (id_loc <opaque>)
+                       (id_tag 8)))
+                     (ts_args ()) (ts_alias ()))
+                    ())))))
+               (t_attrs ()) (t_loc <opaque>)))))
+           (t_ty ()) (t_attrs ()) (t_loc <opaque>))))
+        (sp_checks ()) (sp_post ()) (sp_xpost ()) (sp_wr ()) (sp_cs ())
+        (sp_diverge false) (sp_pure false) (sp_equiv ())
+        (sp_text  " t = silly_create c\
+                 \nrequires c >= 5\
+                 \n")
+        (sp_loc <opaque>))))
+     (vd_loc <opaque>))
+    Nonghost))
+  (sig_loc <opaque>))
+ ((sig_desc
+   (Sig_val
+    ((vd_name
+      ((id_str silly_create) (id_attrs ()) (id_loc <opaque>) (id_tag 1429)))
+     (vd_type <opaque>) (vd_prim ()) (vd_attrs <opaque>)
+     (vd_args
+      ((Lnone
+        ((vs_name ((id_str c) (id_attrs ()) (id_loc <opaque>) (id_tag 1430)))
+         (vs_ty
+          ((ty_node
+            (Tyapp
+             ((ts_ident
+               ((id_str int) (id_attrs ()) (id_loc <opaque>) (id_tag 9)))
+              (ts_args ()) (ts_alias ()))
+             ()))))))))
+     (vd_ret
+      ((Lnone
+        ((vs_name ((id_str t) (id_attrs ()) (id_loc <opaque>) (id_tag 1431)))
+         (vs_ty
+          ((ty_node
+            (Tyapp
+             ((ts_ident
+               ((id_str int) (id_attrs ()) (id_loc <opaque>) (id_tag 9)))
+              (ts_args ()) (ts_alias ()))
+             ()))))))))
+     (vd_spec
+      (((sp_args
+         ((Lnone
+           ((vs_name
+             ((id_str c) (id_attrs ()) (id_loc <opaque>) (id_tag 1430)))
+            (vs_ty
+             ((ty_node
+               (Tyapp
+                ((ts_ident
+                  ((id_str int) (id_attrs ()) (id_loc <opaque>) (id_tag 9)))
+                 (ts_args ()) (ts_alias ()))
+                ()))))))))
+        (sp_ret
+         ((Lnone
+           ((vs_name
+             ((id_str t) (id_attrs ()) (id_loc <opaque>) (id_tag 1431)))
+            (vs_ty
+             ((ty_node
+               (Tyapp
+                ((ts_ident
+                  ((id_str int) (id_attrs ()) (id_loc <opaque>) (id_tag 9)))
+                 (ts_args ()) (ts_alias ()))
+                ()))))))))
+        (sp_pre
+         (((t_node
+            (Tapp
+             ((ls_name
+               ((id_str "infix <") (id_attrs ()) (id_loc <opaque>)
+                (id_tag 870)))
+              (ls_args
+               (((ty_node
+                  (Tyapp
+                   ((ts_ident
+                     ((id_str integer) (id_attrs ()) (id_loc <opaque>)
+                      (id_tag 8)))
+                    (ts_args ()) (ts_alias ()))
+                   ())))
+                ((ty_node
+                  (Tyapp
+                   ((ts_ident
+                     ((id_str integer) (id_attrs ()) (id_loc <opaque>)
+                      (id_tag 8)))
+                    (ts_args ()) (ts_alias ()))
+                   ())))))
+              (ls_value ()) (ls_constr false) (ls_field false))
+             (((t_node
+                (Tapp
+                 ((ls_name
+                   ((id_str integer_of_int) (id_attrs ()) (id_loc <opaque>)
+                    (id_tag 902)))
+                  (ls_args
+                   (((ty_node
+                      (Tyapp
+                       ((ts_ident
+                         ((id_str int) (id_attrs ()) (id_loc <opaque>)
+                          (id_tag 9)))
+                        (ts_args ()) (ts_alias ()))
+                       ())))))
+                  (ls_value
+                   (((ty_node
+                      (Tyapp
+                       ((ts_ident
+                         ((id_str integer) (id_attrs ()) (id_loc <opaque>)
+                          (id_tag 8)))
+                        (ts_args ()) (ts_alias ()))
+                       ())))))
+                  (ls_constr false) (ls_field false))
+                 (((t_node
+                    (Tvar
+                     ((vs_name
+                       ((id_str c) (id_attrs ()) (id_loc <opaque>)
+                        (id_tag 1430)))
+                      (vs_ty
+                       ((ty_node
+                         (Tyapp
+                          ((ts_ident
+                            ((id_str int) (id_attrs ()) (id_loc <opaque>)
+                             (id_tag 9)))
+                           (ts_args ()) (ts_alias ()))
+                          ())))))))
+                   (t_ty
+                    (((ty_node
+                       (Tyapp
+                        ((ts_ident
+                          ((id_str int) (id_attrs ()) (id_loc <opaque>)
+                           (id_tag 9)))
+                         (ts_args ()) (ts_alias ()))
+                        ())))))
+                   (t_attrs ()) (t_loc <opaque>)))))
+               (t_ty
+                (((ty_node
+                   (Tyapp
+                    ((ts_ident
+                      ((id_str integer) (id_attrs ()) (id_loc <opaque>)
+                       (id_tag 8)))
+                     (ts_args ()) (ts_alias ()))
+                    ())))))
+               (t_attrs ()) (t_loc <opaque>))
+              ((t_node (Tconst <opaque>))
+               (t_ty
+                (((ty_node
+                   (Tyapp
+                    ((ts_ident
+                      ((id_str integer) (id_attrs ()) (id_loc <opaque>)
+                       (id_tag 8)))
+                     (ts_args ()) (ts_alias ()))
+                    ())))))
+               (t_attrs ()) (t_loc <opaque>)))))
+           (t_ty ()) (t_attrs ()) (t_loc <opaque>))))
+        (sp_checks ()) (sp_post ()) (sp_xpost ()) (sp_wr ()) (sp_cs ())
+        (sp_diverge false) (sp_pure false) (sp_equiv ())
+        (sp_text  " t = silly_create c\
+                 \nrequires c < 5\
+                 \n")
+        (sp_loc <opaque>))))
+     (vd_loc <opaque>))
+    Nonghost))
+  (sig_loc <opaque>)))include Example
+module Ortac_runtime = Ortac_runtime
+let silly_create c =
+  let __error__001_ =
+    Ortac_runtime.Errors.create
+      {
+        Ortac_runtime.start =
+          {
+            pos_fname = "example.mli";
+            pos_lnum = 8;
+            pos_bol = 105;
+            pos_cnum = 105
+          };
+        Ortac_runtime.stop =
+          {
+            pos_fname = "example.mli";
+            pos_lnum = 11;
+            pos_bol = 224;
+            pos_cnum = 226
+          }
+      } "silly_create" in
+  if
+    not
+      (try
+         Ortac_runtime.Z.geq (Ortac_runtime.Z.of_int c)
+           (Ortac_runtime.Z.of_int 5)
+       with
+       | e ->
+           ((Ortac_runtime.Specification_failure
+               {
+                 term =
+                   "((integer_of_int \nc:int):integer >= 5:integer):prop";
+                 term_kind = Pre;
+                 exn = e
+               })
+              |> (Ortac_runtime.Errors.register __error__001_);
+            true))
+  then
+    (Ortac_runtime.Violated_invariant
+       {
+         term = "((integer_of_int \nc:int):integer >= 5:integer):prop";
+         position = Pre
+       })
+      |> (Ortac_runtime.Errors.register __error__001_);
+  Ortac_runtime.Errors.report __error__001_;
+  (let t =
+     try silly_create c
+     with
+     | Stack_overflow | Out_of_memory as e ->
+         (Ortac_runtime.Errors.report __error__001_; raise e)
+     | e ->
+         ((Ortac_runtime.Unexpected_exception { allowed_exn = []; exn = e })
+            |> (Ortac_runtime.Errors.register __error__001_);
+          Ortac_runtime.Errors.report __error__001_;
+          raise e) in
+   Ortac_runtime.Errors.report __error__001_; t)
+let silly_create c_1 =
+  let __error__002_ =
+    Ortac_runtime.Errors.create
+      {
+        Ortac_runtime.start =
+          {
+            pos_fname = "example.mli";
+            pos_lnum = 13;
+            pos_bol = 228;
+            pos_cnum = 228
+          };
+        Ortac_runtime.stop =
+          {
+            pos_fname = "example.mli";
+            pos_lnum = 16;
+            pos_bol = 347;
+            pos_cnum = 349
+          }
+      } "silly_create" in
+  if
+    not
+      (try
+         Ortac_runtime.Z.lt (Ortac_runtime.Z.of_int c_1)
+           (Ortac_runtime.Z.of_int 5)
+       with
+       | e ->
+           ((Ortac_runtime.Specification_failure
+               {
+                 term =
+                   "((integer_of_int \nc_1:int):integer < 5:integer):prop";
+                 term_kind = Pre;
+                 exn = e
+               })
+              |> (Ortac_runtime.Errors.register __error__002_);
+            true))
+  then
+    (Ortac_runtime.Violated_invariant
+       {
+         term = "((integer_of_int \nc_1:int):integer < 5:integer):prop";
+         position = Pre
+       })
+      |> (Ortac_runtime.Errors.register __error__002_);
+  Ortac_runtime.Errors.report __error__002_;
+  (let t_1 =
+     try silly_create c_1
+     with
+     | Stack_overflow | Out_of_memory as e ->
+         (Ortac_runtime.Errors.report __error__002_; raise e)
+     | e ->
+         ((Ortac_runtime.Unexpected_exception { allowed_exn = []; exn = e })
+            |> (Ortac_runtime.Errors.register __error__002_);
+          Ortac_runtime.Errors.report __error__002_;
+          raise e) in
+   Ortac_runtime.Errors.report __error__002_; t_1)

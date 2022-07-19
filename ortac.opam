@@ -1,0 +1,44 @@
+opam-version: "2.0"
+synopsis: "OCaml Runtime Assertion Checking based on Gospel"
+description: "OCaml Runtime Assertion Checking based on Gospel"
+maintainer: ["Clément Pascutto <clement@pascutto.fr>"]
+authors: [
+  "Clément Pascutto <clement@pascutto.fr>"
+  "Nicolas Osborne <nicolas.osborne@tarides.fr>"
+]
+homepage: "https://github.com/ocaml-gospel/ortac"
+dev-repo: "git+https://github.com/ocaml-gospel/ortac.git"
+doc: "https://ocaml-gospel.github.io/ortac/"
+bug-reports: "https://github.com/ocaml-gospel/ortac/issues"
+build: [
+  ["dune" "subst"] {dev}
+  [
+    "dune"
+    "build"
+    "-p"
+    name
+    "-j"
+    jobs
+    "@install"
+    "@runtest" {with-test}
+    "@doc" {with-doc}
+  ]
+]
+
+depends: [
+  "ocaml" {>= "4.11.0"}
+  "dune" {>= "3.0"}
+  "cmdliner" {>= "1.1.0"}
+  "fmt"
+  "ppxlib" {>= "0.26.0"}
+  "gospel"
+  "alcotest" {with-test}
+  "pprint" {with-test}
+  "ortac-runtime" {with-test}
+  "ortac-runtime-monolith" {with-test}
+  "monolith" {>= "20201026"}
+]
+
+pin-depends: [
+  "gospel.dev" "git+https://github.com/ocaml-gospel/gospel#2f902ad50168a10135051904f7857bb45fe8b3f9"
+]

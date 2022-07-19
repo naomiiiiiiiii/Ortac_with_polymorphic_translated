@@ -1,0 +1,12 @@
+(library
+ (name ortac_default)
+ (preprocess
+  (pps ppx_jane ppxlib.metaquot))
+ (package ortac)
+ (libraries ortac_core fmt gospel ppxlib ppxlib.astlib))
+
+;(executable
+ ;(name myexe)
+ ;(preprocess
+  ;(pps ppx_jane ppxlib.metaquot))
+ ;(libraries core ortac_core fmt ppxlib ppxlib.astlib))

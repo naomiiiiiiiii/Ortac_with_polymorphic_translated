@@ -1,0 +1,20 @@
+(executables
+ (names myexe)
+ (preprocess
+  (pps ppx_jane ppx_deriving.show))
+ (libraries
+ ocaml-compiler-libs.shadow  
+cmdliner
+  fmt
+  fmt.cli
+  fmt.tty
+  gospel
+  ortac_default
+  ortac_core
+  ortac_monolith
+ortac_runtime
+ortac_stm 
+  ppxlib
+pp_loc
+ppx_jane
+  ppxlib.ast))

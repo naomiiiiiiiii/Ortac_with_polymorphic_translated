@@ -1,0 +1,46 @@
+ open Translated
+
+module S = Map.Make (String)
+
+let mk_arg name label typ : Ast3.arg = {arg_name = name;
+                                          arg_label = label;
+                                          arg_type = typ}
+
+let safe_add (key : string) v (m : 'a S.t) = match S.find_opt key m with
+  None -> `Ok (S.add key v m)
+  | Some _ -> `Duplicate (key)
+
+(* let typ_of_string (typ_name) = *)
+
+
+let cmd items : Ast3.cmd =
+ List.fold_right (fun s acc -> match s with
+      | Value v when (v.arguments <> []) ->
+         (match (safe_add v.name (List.map (fun (arg: ocaml_var) ->
+            mk_arg arg.name arg.label arg.type_.name)
+                v.arguments) acc) with
+         `Ok out -> out
+         | `Duplicate key -> raise (Failure ("function declared twice: " ^ key)))
+      | _ -> acc) items S.empty
+
+let typ_of_ty (ty: Ttypes.ty)  =
+
+let mk_qcheck (typ: Ast3.typ) =
+
+(*start here need to change the type_.models to include ttypes.ty
+
+first check -- do they have this anywhere? for the model?
+  in the tast? no
+  in the uast? *)
+let state items : Ast3.state  =
+  match List.find_opt (fun s -> match s with
+      | Type t when (String.equal t.name "t") -> true 
+      | _ -> false) items with
+  Some (Type t) -> List.map (fun ty -> (name, "fake type")) fake_models
+  | _ -> raise (Failure ("type t not declared; could not determine sut"))
+
+
+let arb_cmd =
+  S.map (fun args ->
+      List.map args (fun arg -> mk_qcheck arg.arg_type))
+

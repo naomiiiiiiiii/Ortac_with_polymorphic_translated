@@ -1,0 +1,22 @@
+
+(*let _ = print_endline(Tast.show_lb_arg Tast.Lunit)*)
+ open Gospel 
+
+let path = "./ortac_ex.mli"
+  let outpath = "./ortac_ex_fin.ml"
+let uat : Uast.s_signature = Parser_frontend.parse_ocaml_gospel path 
+
+let (_, sigs ) = Ortac_core.Utils.type_check [] path uat
+
+(* let x = Tast.sexp_of_signature sigs *)
+
+(* let _ = Core.print_s [%sexp (sigs: Tast.signature)] *)
+
+let test = Cli.main "default" path outpath 
+
+(* let x = Tast_printer.print_signature Format.std_formatter sigs *)
+
+(*env : namespace list. use the fn in tmodules to print it?
+  these are just all the identifiers in the environment, stdlib modules (? only some of them)
+  let _ = List.map (Tmodule.print_ns " " Format.std_formatter ) env *)
+

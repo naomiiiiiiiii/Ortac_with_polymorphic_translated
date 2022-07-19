@@ -1,0 +1,3827 @@
+type 'a t
+
+val silly_create : int -> 'a t
+[@@gospel
+# 4 "example.mli"
+ {| t = silly_create c
+requires c >= 5 
+requires c < 10
+requires c = 0
+|}
+# 8 "example.mli"
+ ]
+
+end of file that is lexed
+spec_txt in uattr2spec: open Stdlib
+end spec_txt
+third: None
+end_third
+spec_txt in uattr2spec: open Stdlib
+end spec_txt
+third: None
+end_third
+spec_txt in uattr2spec: open Stdlib
+end spec_txt
+third: None
+end_third
+spec_txt in uattr2spec: open Gospelstdlib
+end spec_txt
+third: None
+end_third
+spec_txt in uattr2spec: open Gospelstdlib
+end spec_txt
+third: None
+end_third
+spec_txt in uattr2spec: open Gospelstdlib
+end spec_txt
+third: None
+end_third
+spec_txt in uattr2spec:  t = silly_create c
+requires c >= 5 
+requires c < 10
+requires c = 0
+
+end spec_txt
+third: 
+end_third
+>= 
+ inside ulexer 102
+ inside uparser < 
+ inside ulexer 119
+ inside uparser 135
+ inside uparser sp_text is 
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
+(*                                                                        *)
+(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
+
+(** The OCaml Standard library.
+
+    This module is automatically opened at the beginning of each
+    compilation. All components of this module can therefore be
+    referred by their short name, without prefixing them by [Stdlib].
+
+    It particular, it provides the basic operations over the built-in
+    types (numbers, booleans, byte sequences, strings, exceptions,
+    references, lists, arrays, input-output channels, ...) and the
+    {{!modules}standard library modules}.
+*)
+
+(** {1 Exceptions} *)
+
+external raise : exn -> 'a = "%raise"
+(** Raise the given exception value *)
+
+external raise_notrace : exn -> 'a = "%raise_notrace"
+(** A faster version [raise] which does not record the backtrace.
+    @since 4.02.0
+*)
+
+val invalid_arg : string -> 'a
+(** Raise exception [Invalid_argument] with the given string. *)
+
+val failwith : string -> 'a
+(** Raise exception [Failure] with the given string. *)
+
+exception Exit
+(** The [Exit] exception is not raised by any library function.  It is
+    provided for use in your programs. *)
+
+exception Match_failure of (string * int * int)
+  [@ocaml.warn_on_literal_pattern]
+(** Exception raised when none of the cases of a pattern-matching
+   apply. The arguments are the location of the match keyword in the
+   source code (file name, line number, column number). *)
+
+exception Assert_failure of (string * int * int)
+  [@ocaml.warn_on_literal_pattern]
+(** Exception raised when an assertion fails. The arguments are the
+   location of the assert keyword in the source code (file name, line
+   number, column number). *)
+
+exception Invalid_argument of string
+  [@ocaml.warn_on_literal_pattern]
+(** Exception raised by library functions to signal that the given
+   arguments do not make sense. The string gives some information to
+   the programmer. As a general rule, this exception should not be
+   caught, it denotes a programming error and the code should be
+   modified not to trigger it. *)
+
+exception Failure of string
+  [@ocaml.warn_on_literal_pattern]
+(** Exception raised by library functions to signal that they are
+   undefined on the given arguments. The string is meant to give some
+   information to the programmer; you must not pattern match on the
+   string literal because it may change in future versions (use
+   Failure _ instead). *)
+
+exception Not_found
+(** Exception raised by search functions when the desired object could
+   not be found. *)
+
+exception Out_of_memory
+(** Exception raised by the garbage collector when there is
+   insufficient memory to complete the computation. (Not reliable for
+   allocations on the minor heap.) *)
+
+exception Stack_overflow
+(** Exception raised by the bytecode interpreter when the evaluation
+   stack reaches its maximal size. This often indicates infinite or
+   excessively deep recursion in the user's program.
+
+   Before 4.10, it was not fully implemented by the native-code
+   compiler. *)
+
+exception Sys_error of string
+  [@ocaml.warn_on_literal_pattern]
+(** Exception raised by the input/output functions to report an
+   operating system error. The string is meant to give some
+   information to the programmer; you must not pattern match on the
+   string literal because it may change in future versions (use
+   Sys_error _ instead). *)
+
+exception End_of_file
+(** Exception raised by input functions to signal that the end of file
+   has been reached. *)
+
+exception Division_by_zero
+(** Exception raised by integer division and remainder operations when
+   their second argument is zero. *)
+
+exception Sys_blocked_io
+(** A special case of Sys_error raised when no I/O is possible on a
+   non-blocking I/O channel. *)
+
+exception Undefined_recursive_module of (string * int * int)
+  [@ocaml.warn_on_literal_pattern]
+(** Exception raised when an ill-founded recursive module definition
+   is evaluated. The arguments are the location of the definition in
+   the source code (file name, line number, column number). *)
+
+(** {1 Comparisons} *)
+
+external ( = ) : 'a -> 'a -> bool = "%equal"
+(** [e1 = e2] tests for structural equality of [e1] and [e2].
+   Mutable structures (e.g. references and arrays) are equal
+   if and only if their current contents are structurally equal,
+   even if the two mutable objects are not the same physical object.
+   Equality between functional values raises [Invalid_argument].
+   Equality between cyclic data structures may not terminate.
+   Left-associative operator, see {!Ocaml_operators} for more information. *)
+
+external ( <> ) : 'a -> 'a -> bool = "%notequal"
+(** Negation of {!Stdlib.( = )}.
+    Left-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+external ( < ) : 'a -> 'a -> bool = "%lessthan"
+(** See {!Stdlib.( >= )}.
+    Left-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+external ( > ) : 'a -> 'a -> bool = "%greaterthan"
+(** See {!Stdlib.( >= )}.
+    Left-associative operator,  see {!Ocaml_operators} for more information.
+*)
+
+external ( <= ) : 'a -> 'a -> bool = "%lessequal"
+(** See {!Stdlib.( >= )}.
+    Left-associative operator,  see {!Ocaml_operators} for more information.
+*)
+
+external ( >= ) : 'a -> 'a -> bool = "%greaterequal"
+(** Structural ordering functions. These functions coincide with
+   the usual orderings over integers, characters, strings, byte sequences
+   and floating-point numbers, and extend them to a
+   total ordering over all types.
+   The ordering is compatible with [( = )]. As in the case
+   of [( = )], mutable structures are compared by contents.
+   Comparison between functional values raises [Invalid_argument].
+   Comparison between cyclic structures may not terminate.
+   Left-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+external compare : 'a -> 'a -> int = "%compare"
+(** [compare x y] returns [0] if [x] is equal to [y],
+   a negative integer if [x] is less than [y], and a positive integer
+   if [x] is greater than [y].  The ordering implemented by [compare]
+   is compatible with the comparison predicates [=], [<] and [>]
+   defined above,  with one difference on the treatment of the float value
+   {!Stdlib.nan}.  Namely, the comparison predicates treat [nan]
+   as different from any other float value, including itself;
+   while [compare] treats [nan] as equal to itself and less than any
+   other float value.  This treatment of [nan] ensures that [compare]
+   defines a total ordering relation.
+
+   [compare] applied to functional values may raise [Invalid_argument].
+   [compare] applied to cyclic structures may not terminate.
+
+   The [compare] function can be used as the comparison function
+   required by the {!Set.Make} and {!Map.Make} functors, as well as
+   the {!List.sort} and {!Array.sort} functions. *)
+
+val min : 'a -> 'a -> 'a
+(** Return the smaller of the two arguments.
+    The result is unspecified if one of the arguments contains
+    the float value [nan]. *)
+
+val max : 'a -> 'a -> 'a
+(** Return the greater of the two arguments.
+    The result is unspecified if one of the arguments contains
+    the float value [nan]. *)
+
+external ( == ) : 'a -> 'a -> bool = "%eq"
+(** [e1 == e2] tests for physical equality of [e1] and [e2].
+   On mutable types such as references, arrays, byte sequences, records with
+   mutable fields and objects with mutable instance variables,
+   [e1 == e2] is true if and only if physical modification of [e1]
+   also affects [e2].
+   On non-mutable types, the behavior of [( == )] is
+   implementation-dependent; however, it is guaranteed that
+   [e1 == e2] implies [compare e1 e2 = 0].
+   Left-associative operator,  see {!Ocaml_operators} for more information.
+*)
+
+external ( != ) : 'a -> 'a -> bool = "%noteq"
+(** Negation of {!Stdlib.( == )}.
+    Left-associative operator,  see {!Ocaml_operators} for more information.
+*)
+
+
+(** {1 Boolean operations} *)
+
+external not : bool -> bool = "%boolnot"
+(** The boolean negation. *)
+
+external ( && ) : bool -> bool -> bool = "%sequand"
+(** The boolean 'and'. Evaluation is sequential, left-to-right:
+   in [e1 && e2], [e1] is evaluated first, and if it returns [false],
+   [e2] is not evaluated at all.
+   Right-associative operator,  see {!Ocaml_operators} for more information.
+*)
+
+external ( & ) : bool -> bool -> bool = "%sequand"
+  [@@ocaml.deprecated "Use (&&) instead."]
+(** @deprecated {!Stdlib.( && )} should be used instead.
+    Right-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+external ( || ) : bool -> bool -> bool = "%sequor"
+(** The boolean 'or'. Evaluation is sequential, left-to-right:
+   in [e1 || e2], [e1] is evaluated first, and if it returns [true],
+   [e2] is not evaluated at all.
+   Right-associative operator,  see {!Ocaml_operators} for more information.
+*)
+
+external ( or ) : bool -> bool -> bool = "%sequor"
+  [@@ocaml.deprecated "Use (||) instead."]
+(** @deprecated {!Stdlib.( || )} should be used instead.
+    Right-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+(** {1 Debugging} *)
+
+external __LOC__ : string = "%loc_LOC"
+(** [__LOC__] returns the location at which this expression appears in
+    the file currently being parsed by the compiler, with the standard
+    error format of OCaml: "File %S, line %d, characters %d-%d".
+    @since 4.02.0
+*)
+
+external __FILE__ : string = "%loc_FILE"
+(** [__FILE__] returns the name of the file currently being
+    parsed by the compiler.
+    @since 4.02.0
+*)
+
+external __LINE__ : int = "%loc_LINE"
+(** [__LINE__] returns the line number at which this expression
+    appears in the file currently being parsed by the compiler.
+    @since 4.02.0
+*)
+
+external __MODULE__ : string = "%loc_MODULE"
+(** [__MODULE__] returns the module name of the file being
+    parsed by the compiler.
+    @since 4.02.0
+*)
+
+external __POS__ : string * int * int * int = "%loc_POS"
+(** [__POS__] returns a tuple [(file,lnum,cnum,enum)], corresponding
+    to the location at which this expression appears in the file
+    currently being parsed by the compiler. [file] is the current
+    filename, [lnum] the line number, [cnum] the character position in
+    the line and [enum] the last character position in the line.
+    @since 4.02.0
+ *)
+
+external __FUNCTION__ : string = "%loc_FUNCTION"
+(** [__FUNCTION__] returns the name of the current function or method, including
+    any enclosing modules or classes.
+
+    @since 4.12.0 *)
+
+external __LOC_OF__ : 'a -> string * 'a = "%loc_LOC"
+(** [__LOC_OF__ expr] returns a pair [(loc, expr)] where [loc] is the
+    location of [expr] in the file currently being parsed by the
+    compiler, with the standard error format of OCaml: "File %S, line
+    %d, characters %d-%d".
+    @since 4.02.0
+*)
+
+external __LINE_OF__ : 'a -> int * 'a = "%loc_LINE"
+(** [__LINE_OF__ expr] returns a pair [(line, expr)], where [line] is the
+    line number at which the expression [expr] appears in the file
+    currently being parsed by the compiler.
+    @since 4.02.0
+ *)
+
+external __POS_OF__ : 'a -> (string * int * int * int) * 'a = "%loc_POS"
+(** [__POS_OF__ expr] returns a pair [(loc,expr)], where [loc] is a
+    tuple [(file,lnum,cnum,enum)] corresponding to the location at
+    which the expression [expr] appears in the file currently being
+    parsed by the compiler. [file] is the current filename, [lnum] the
+    line number, [cnum] the character position in the line and [enum]
+    the last character position in the line.
+    @since 4.02.0
+ *)
+
+(** {1 Composition operators} *)
+
+external ( |> ) : 'a -> ('a -> 'b) -> 'b = "%revapply"
+(** Reverse-application operator: [x |> f |> g] is exactly equivalent
+ to [g (f (x))].
+ Left-associative operator, see {!Ocaml_operators} for more information.
+ @since 4.01
+*)
+
+external ( @@ ) : ('a -> 'b) -> 'a -> 'b = "%apply"
+(** Application operator: [g @@ f @@ x] is exactly equivalent to
+ [g (f (x))].
+ Right-associative operator, see {!Ocaml_operators} for more information.
+ @since 4.01
+*)
+
+(** {1 Integer arithmetic} *)
+
+(** Integers are [Sys.int_size] bits wide.
+    All operations are taken modulo 2{^[Sys.int_size]}.
+    They do not fail on overflow. *)
+
+external ( ~- ) : int -> int = "%negint"
+(** Unary negation. You can also write [- e] instead of [~- e].
+    Unary operator, see {!Ocaml_operators} for more information.
+*)
+
+
+external ( ~+ ) : int -> int = "%identity"
+(** Unary addition. You can also write [+ e] instead of [~+ e].
+    Unary operator, see {!Ocaml_operators} for more information.
+    @since 3.12.0
+*)
+
+external succ : int -> int = "%succint"
+(** [succ x] is [x + 1]. *)
+
+external pred : int -> int = "%predint"
+(** [pred x] is [x - 1]. *)
+
+external ( + ) : int -> int -> int = "%addint"
+(** Integer addition.
+    Left-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+external ( - ) : int -> int -> int = "%subint"
+(** Integer subtraction.
+    Left-associative operator, , see {!Ocaml_operators} for more information.
+*)
+
+external ( * ) : int -> int -> int = "%mulint"
+(** Integer multiplication.
+    Left-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+external ( / ) : int -> int -> int = "%divint"
+(** Integer division.
+   Integer division rounds the real quotient of its arguments towards zero.
+   More precisely, if [x >= 0] and [y > 0], [x / y] is the greatest integer
+   less than or equal to the real quotient of [x] by [y].  Moreover,
+   [(- x) / y = x / (- y) = - (x / y)].
+   Left-associative operator, see {!Ocaml_operators} for more information.
+
+   @raise Division_by_zero if the second argument is 0.
+*)
+
+external ( mod ) : int -> int -> int = "%modint"
+(** Integer remainder.  If [y] is not zero, the result
+   of [x mod y] satisfies the following properties:
+   [x = (x / y) * y + x mod y] and
+   [abs(x mod y) <= abs(y) - 1].
+   If [y = 0], [x mod y] raises [Division_by_zero].
+   Note that [x mod y] is negative only if [x < 0].
+   Left-associative operator, see {!Ocaml_operators} for more information.
+
+   @raise Division_by_zero if [y] is zero.
+*)
+
+val abs : int -> int
+(** Return the absolute value of the argument.  Note that this may be
+  negative if the argument is [min_int]. *)
+
+val max_int : int
+(** The greatest representable integer. *)
+
+val min_int : int
+(** The smallest representable integer. *)
+
+
+(** {2 Bitwise operations} *)
+
+external ( land ) : int -> int -> int = "%andint"
+(** Bitwise logical and.
+    Left-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+external ( lor ) : int -> int -> int = "%orint"
+(** Bitwise logical or.
+    Left-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+external ( lxor ) : int -> int -> int = "%xorint"
+(** Bitwise logical exclusive or.
+    Left-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+val lnot : int -> int
+(** Bitwise logical negation. *)
+
+external ( lsl ) : int -> int -> int = "%lslint"
+(** [n lsl m] shifts [n] to the left by [m] bits.
+    The result is unspecified if [m < 0] or [m > Sys.int_size].
+    Right-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+external ( lsr ) : int -> int -> int = "%lsrint"
+(** [n lsr m] shifts [n] to the right by [m] bits.
+    This is a logical shift: zeroes are inserted regardless of
+    the sign of [n].
+    The result is unspecified if [m < 0] or [m > Sys.int_size].
+    Right-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+external ( asr ) : int -> int -> int = "%asrint"
+(** [n asr m] shifts [n] to the right by [m] bits.
+    This is an arithmetic shift: the sign bit of [n] is replicated.
+    The result is unspecified if [m < 0] or [m > Sys.int_size].
+    Right-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+(** {1 Floating-point arithmetic}
+
+   OCaml's floating-point numbers follow the
+   IEEE 754 standard, using double precision (64 bits) numbers.
+   Floating-point operations never raise an exception on overflow,
+   underflow, division by zero, etc.  Instead, special IEEE numbers
+   are returned as appropriate, such as [infinity] for [1.0 /. 0.0],
+   [neg_infinity] for [-1.0 /. 0.0], and [nan] ('not a number')
+   for [0.0 /. 0.0].  These special numbers then propagate through
+   floating-point computations as expected: for instance,
+    [1.0 /. infinity] is [0.0], basic arithmetic operations
+    ([+.], [-.], [*.], [/.]) with [nan] as an argument return [nan], ...
+*)
+
+external ( ~-. ) : float -> float = "%negfloat"
+(** Unary negation. You can also write [-. e] instead of [~-. e].
+    Unary operator, see {!Ocaml_operators} for more information.
+*)
+
+external ( ~+. ) : float -> float = "%identity"
+(** Unary addition. You can also write [+. e] instead of [~+. e].
+    Unary operator, see {!Ocaml_operators} for more information.
+    @since 3.12.0
+*)
+
+external ( +. ) : float -> float -> float = "%addfloat"
+(** Floating-point addition.
+    Left-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+external ( -. ) : float -> float -> float = "%subfloat"
+(** Floating-point subtraction.
+    Left-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+external ( *. ) : float -> float -> float = "%mulfloat"
+(** Floating-point multiplication.
+    Left-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+external ( /. ) : float -> float -> float = "%divfloat"
+(** Floating-point division.
+    Left-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+external ( ** ) : float -> float -> float = "caml_power_float" "pow"
+  [@@unboxed] [@@noalloc]
+(** Exponentiation.
+    Right-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+external sqrt : float -> float = "caml_sqrt_float" "sqrt"
+  [@@unboxed] [@@noalloc]
+(** Square root. *)
+
+external exp : float -> float = "caml_exp_float" "exp" [@@unboxed] [@@noalloc]
+(** Exponential. *)
+
+external log : float -> float = "caml_log_float" "log" [@@unboxed] [@@noalloc]
+(** Natural logarithm. *)
+
+external log10 : float -> float = "caml_log10_float" "log10"
+  [@@unboxed] [@@noalloc]
+(** Base 10 logarithm. *)
+
+external expm1 : float -> float = "caml_expm1_float" "caml_expm1"
+  [@@unboxed] [@@noalloc]
+(** [expm1 x] computes [exp x -. 1.0], giving numerically-accurate results
+    even if [x] is close to [0.0].
+    @since 3.12.0
+*)
+
+external log1p : float -> float = "caml_log1p_float" "caml_log1p"
+  [@@unboxed] [@@noalloc]
+(** [log1p x] computes [log(1.0 +. x)] (natural logarithm),
+    giving numerically-accurate results even if [x] is close to [0.0].
+    @since 3.12.0
+*)
+
+external cos : float -> float = "caml_cos_float" "cos" [@@unboxed] [@@noalloc]
+(** Cosine.  Argument is in radians. *)
+
+external sin : float -> float = "caml_sin_float" "sin" [@@unboxed] [@@noalloc]
+(** Sine.  Argument is in radians. *)
+
+external tan : float -> float = "caml_tan_float" "tan" [@@unboxed] [@@noalloc]
+(** Tangent.  Argument is in radians. *)
+
+external acos : float -> float = "caml_acos_float" "acos"
+  [@@unboxed] [@@noalloc]
+(** Arc cosine.  The argument must fall within the range [[-1.0, 1.0]].
+    Result is in radians and is between [0.0] and [pi]. *)
+
+external asin : float -> float = "caml_asin_float" "asin"
+  [@@unboxed] [@@noalloc]
+(** Arc sine.  The argument must fall within the range [[-1.0, 1.0]].
+    Result is in radians and is between [-pi/2] and [pi/2]. *)
+
+external atan : float -> float = "caml_atan_float" "atan"
+  [@@unboxed] [@@noalloc]
+(** Arc tangent.
+    Result is in radians and is between [-pi/2] and [pi/2]. *)
+
+external atan2 : float -> float -> float = "caml_atan2_float" "atan2"
+  [@@unboxed] [@@noalloc]
+(** [atan2 y x] returns the arc tangent of [y /. x].  The signs of [x]
+    and [y] are used to determine the quadrant of the result.
+    Result is in radians and is between [-pi] and [pi]. *)
+
+external hypot : float -> float -> float = "caml_hypot_float" "caml_hypot"
+  [@@unboxed] [@@noalloc]
+(** [hypot x y] returns [sqrt(x *. x + y *. y)], that is, the length
+  of the hypotenuse of a right-angled triangle with sides of length
+  [x] and [y], or, equivalently, the distance of the point [(x,y)]
+  to origin.  If one of [x] or [y] is infinite, returns [infinity]
+  even if the other is [nan].
+  @since 4.00.0  *)
+
+external cosh : float -> float = "caml_cosh_float" "cosh"
+  [@@unboxed] [@@noalloc]
+(** Hyperbolic cosine.  Argument is in radians. *)
+
+external sinh : float -> float = "caml_sinh_float" "sinh"
+  [@@unboxed] [@@noalloc]
+(** Hyperbolic sine.  Argument is in radians. *)
+
+external tanh : float -> float = "caml_tanh_float" "tanh"
+  [@@unboxed] [@@noalloc]
+(** Hyperbolic tangent.  Argument is in radians. *)
+
+external acosh : float -> float = "caml_acosh_float" "caml_acosh"
+  [@@unboxed] [@@noalloc]
+(** Hyperbolic arc cosine.  The argument must fall within the range
+    [[1.0, inf]].
+    Result is in radians and is between [0.0] and [inf].
+
+    @since 4.13.0
+*)
+
+external asinh : float -> float = "caml_asinh_float" "caml_asinh"
+  [@@unboxed] [@@noalloc]
+(** Hyperbolic arc sine.  The argument and result range over the entire
+    real line.
+    Result is in radians.
+
+    @since 4.13.0
+*)
+
+external atanh : float -> float = "caml_atanh_float" "caml_atanh"
+  [@@unboxed] [@@noalloc]
+(** Hyperbolic arc tangent.  The argument must fall within the range
+    [[-1.0, 1.0]].
+    Result is in radians and ranges over the entire real line.
+
+    @since 4.13.0
+*)
+
+external ceil : float -> float = "caml_ceil_float" "ceil"
+  [@@unboxed] [@@noalloc]
+(** Round above to an integer value.
+    [ceil f] returns the least integer value greater than or equal to [f].
+    The result is returned as a float. *)
+
+external floor : float -> float = "caml_floor_float" "floor"
+  [@@unboxed] [@@noalloc]
+(** Round below to an integer value.
+    [floor f] returns the greatest integer value less than or
+    equal to [f].
+    The result is returned as a float. *)
+
+external abs_float : float -> float = "%absfloat"
+(** [abs_float f] returns the absolute value of [f]. *)
+
+external copysign : float -> float -> float
+                  = "caml_copysign_float" "caml_copysign"
+                  [@@unboxed] [@@noalloc]
+(** [copysign x y] returns a float whose absolute value is that of [x]
+  and whose sign is that of [y].  If [x] is [nan], returns [nan].
+  If [y] is [nan], returns either [x] or [-. x], but it is not
+  specified which.
+  @since 4.00.0  *)
+
+external mod_float : float -> float -> float = "caml_fmod_float" "fmod"
+  [@@unboxed] [@@noalloc]
+(** [mod_float a b] returns the remainder of [a] with respect to
+   [b].  The returned value is [a -. n *. b], where [n]
+   is the quotient [a /. b] rounded towards zero to an integer. *)
+
+external frexp : float -> float * int = "caml_frexp_float"
+(** [frexp f] returns the pair of the significant
+   and the exponent of [f].  When [f] is zero, the
+   significant [x] and the exponent [n] of [f] are equal to
+   zero.  When [f] is non-zero, they are defined by
+   [f = x *. 2 ** n] and [0.5 <= x < 1.0]. *)
+
+
+external ldexp : (float [@unboxed]) -> (int [@untagged]) -> (float [@unboxed]) =
+  "caml_ldexp_float" "caml_ldexp_float_unboxed" [@@noalloc]
+(** [ldexp x n] returns [x *. 2 ** n]. *)
+
+external modf : float -> float * float = "caml_modf_float"
+(** [modf f] returns the pair of the fractional and integral
+   part of [f]. *)
+
+external float : int -> float = "%floatofint"
+(** Same as {!Stdlib.float_of_int}. *)
+
+external float_of_int : int -> float = "%floatofint"
+(** Convert an integer to floating-point. *)
+
+external truncate : float -> int = "%intoffloat"
+(** Same as {!Stdlib.int_of_float}. *)
+
+external int_of_float : float -> int = "%intoffloat"
+(** Truncate the given floating-point number to an integer.
+   The result is unspecified if the argument is [nan] or falls outside the
+   range of representable integers. *)
+
+val infinity : float
+(** Positive infinity. *)
+
+val neg_infinity : float
+(** Negative infinity. *)
+
+val nan : float
+(** A special floating-point value denoting the result of an
+   undefined operation such as [0.0 /. 0.0].  Stands for
+   'not a number'.  Any floating-point operation with [nan] as
+   argument returns [nan] as result.  As for floating-point comparisons,
+   [=], [<], [<=], [>] and [>=] return [false] and [<>] returns [true]
+   if one or both of their arguments is [nan]. *)
+
+val max_float : float
+(** The largest positive finite value of type [float]. *)
+
+val min_float : float
+(** The smallest positive, non-zero, non-denormalized value of type [float]. *)
+
+val epsilon_float : float
+(** The difference between [1.0] and the smallest exactly representable
+    floating-point number greater than [1.0]. *)
+
+type fpclass =
+    FP_normal           (** Normal number, none of the below *)
+  | FP_subnormal        (** Number very close to 0.0, has reduced precision *)
+  | FP_zero             (** Number is 0.0 or -0.0 *)
+  | FP_infinite         (** Number is positive or negative infinity *)
+  | FP_nan              (** Not a number: result of an undefined operation *)
+(** The five classes of floating-point numbers, as determined by
+   the {!Stdlib.classify_float} function. *)
+
+external classify_float : (float [@unboxed]) -> fpclass =
+  "caml_classify_float" "caml_classify_float_unboxed" [@@noalloc]
+(** Return the class of the given floating-point number:
+   normal, subnormal, zero, infinite, or not a number. *)
+
+
+(** {1 String operations}
+
+   More string operations are provided in module {!String}.
+*)
+
+val ( ^ ) : string -> string -> string
+(** String concatenation.
+    Right-associative operator, see {!Ocaml_operators} for more information.
+
+    @raise Invalid_argument if the result is longer then
+    than {!Sys.max_string_length} bytes.
+*)
+
+(** {1 Character operations}
+
+   More character operations are provided in module {!Char}.
+*)
+
+external int_of_char : char -> int = "%identity"
+(** Return the ASCII code of the argument. *)
+
+val char_of_int : int -> char
+(** Return the character with the given ASCII code.
+   @raise Invalid_argument if the argument is
+   outside the range 0--255. *)
+
+
+(** {1 Unit operations} *)
+
+external ignore : 'a -> unit = "%ignore"
+(** Discard the value of its argument and return [()].
+   For instance, [ignore(f x)] discards the result of
+   the side-effecting function [f].  It is equivalent to
+   [f x; ()], except that the latter may generate a
+   compiler warning; writing [ignore(f x)] instead
+   avoids the warning. *)
+
+
+(** {1 String conversion functions} *)
+
+val string_of_bool : bool -> string
+(** Return the string representation of a boolean. As the returned values
+   may be shared, the user should not modify them directly.
+*)
+
+val bool_of_string_opt: string -> bool option
+(** Convert the given string to a boolean.
+
+   Return [None] if the string is not ["true"] or ["false"].
+   @since 4.05
+*)
+
+val bool_of_string : string -> bool
+(** Same as {!Stdlib.bool_of_string_opt}, but raise
+   [Invalid_argument "bool_of_string"] instead of returning [None]. *)
+
+val string_of_int : int -> string
+(** Return the string representation of an integer, in decimal. *)
+
+val int_of_string_opt: string -> int option
+(** Convert the given string to an integer.
+   The string is read in decimal (by default, or if the string
+   begins with [0u]), in hexadecimal (if it begins with [0x] or
+   [0X]), in octal (if it begins with [0o] or [0O]), or in binary
+   (if it begins with [0b] or [0B]).
+
+   The [0u] prefix reads the input as an unsigned integer in the range
+   [[0, 2*max_int+1]].  If the input exceeds {!max_int}
+   it is converted to the signed integer
+   [min_int + input - max_int - 1].
+
+   The [_] (underscore) character can appear anywhere in the string
+   and is ignored.
+
+   Return [None] if the given string is not a valid representation of an
+   integer, or if the integer represented exceeds the range of integers
+   representable in type [int].
+   @since 4.05
+*)
+
+external int_of_string : string -> int = "caml_int_of_string"
+(** Same as {!Stdlib.int_of_string_opt}, but raise
+   [Failure "int_of_string"] instead of returning [None]. *)
+
+val string_of_float : float -> string
+(** Return the string representation of a floating-point number. *)
+
+val float_of_string_opt: string -> float option
+(** Convert the given string to a float.  The string is read in decimal
+   (by default) or in hexadecimal (marked by [0x] or [0X]).
+
+   The format of decimal floating-point numbers is
+   [ [-] dd.ddd (e|E) [+|-] dd ], where [d] stands for a decimal digit.
+
+   The format of hexadecimal floating-point numbers is
+   [ [-] 0(x|X) hh.hhh (p|P) [+|-] dd ], where [h] stands for an
+   hexadecimal digit and [d] for a decimal digit.
+
+   In both cases, at least one of the integer and fractional parts must be
+   given; the exponent part is optional.
+
+   The [_] (underscore) character can appear anywhere in the string
+   and is ignored.
+
+   Depending on the execution platforms, other representations of
+   floating-point numbers can be accepted, but should not be relied upon.
+
+   Return [None] if the given string is not a valid representation of a float.
+   @since 4.05
+*)
+
+external float_of_string : string -> float = "caml_float_of_string"
+(** Same as {!Stdlib.float_of_string_opt}, but raise
+   [Failure "float_of_string"] instead of returning [None]. *)
+
+(** {1 Pair operations} *)
+
+external fst : 'a * 'b -> 'a = "%field0"
+(** Return the first component of a pair. *)
+
+external snd : 'a * 'b -> 'b = "%field1"
+(** Return the second component of a pair. *)
+
+
+(** {1 List operations}
+
+   More list operations are provided in module {!List}.
+*)
+
+val ( @ ) : 'a list -> 'a list -> 'a list
+(** List concatenation.  Not tail-recursive (length of the first argument).
+  Right-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+(** {1 Input/output}
+    Note: all input/output functions can raise [Sys_error] when the system
+    calls they invoke fail. *)
+
+type in_channel
+(** The type of input channel. *)
+
+type out_channel
+(** The type of output channel. *)
+
+val stdin : in_channel
+(** The standard input for the process. *)
+
+val stdout : out_channel
+(** The standard output for the process. *)
+
+val stderr : out_channel
+(** The standard error output for the process. *)
+
+
+(** {2 Output functions on standard output} *)
+
+val print_char : char -> unit
+(** Print a character on standard output. *)
+
+val print_string : string -> unit
+(** Print a string on standard output. *)
+
+val print_bytes : bytes -> unit
+(** Print a byte sequence on standard output.
+   @since 4.02.0 *)
+
+val print_int : int -> unit
+(** Print an integer, in decimal, on standard output. *)
+
+val print_float : float -> unit
+(** Print a floating-point number, in decimal, on standard output. *)
+
+val print_endline : string -> unit
+(** Print a string, followed by a newline character, on
+   standard output and flush standard output. *)
+
+val print_newline : unit -> unit
+(** Print a newline character on standard output, and flush
+   standard output. This can be used to simulate line
+   buffering of standard output. *)
+
+
+(** {2 Output functions on standard error} *)
+
+val prerr_char : char -> unit
+(** Print a character on standard error. *)
+
+val prerr_string : string -> unit
+(** Print a string on standard error. *)
+
+val prerr_bytes : bytes -> unit
+(** Print a byte sequence on standard error.
+   @since 4.02.0 *)
+
+val prerr_int : int -> unit
+(** Print an integer, in decimal, on standard error. *)
+
+val prerr_float : float -> unit
+(** Print a floating-point number, in decimal, on standard error. *)
+
+val prerr_endline : string -> unit
+(** Print a string, followed by a newline character on standard
+   error and flush standard error. *)
+
+val prerr_newline : unit -> unit
+(** Print a newline character on standard error, and flush
+   standard error. *)
+
+
+(** {2 Input functions on standard input} *)
+
+val read_line : unit -> string
+(** Flush standard output, then read characters from standard input
+   until a newline character is encountered.
+
+   Return the string of all characters read, without the newline character
+   at the end.
+
+   @raise End_of_file if the end of the file is reached at the beginning of
+   line.
+*)
+
+val read_int_opt: unit -> int option
+(** Flush standard output, then read one line from standard input
+   and convert it to an integer.
+
+   Return [None] if the line read is not a valid representation of an integer.
+   @since 4.05
+*)
+
+val read_int : unit -> int
+(** Same as {!Stdlib.read_int_opt}, but raise [Failure "int_of_string"]
+   instead of returning [None]. *)
+
+val read_float_opt: unit -> float option
+(** Flush standard output, then read one line from standard input
+   and convert it to a floating-point number.
+
+   Return [None] if the line read is not a valid representation of a
+   floating-point number.
+   @since 4.05.0
+*)
+
+val read_float : unit -> float
+(** Same as {!Stdlib.read_float_opt}, but raise [Failure "float_of_string"]
+   instead of returning [None]. *)
+
+
+(** {2 General output functions} *)
+
+type open_flag =
+    Open_rdonly      (** open for reading. *)
+  | Open_wronly      (** open for writing. *)
+  | Open_append      (** open for appending: always write at end of file. *)
+  | Open_creat       (** create the file if it does not exist. *)
+  | Open_trunc       (** empty the file if it already exists. *)
+  | Open_excl        (** fail if Open_creat and the file already exists. *)
+  | Open_binary      (** open in binary mode (no conversion). *)
+  | Open_text        (** open in text mode (may perform conversions). *)
+  | Open_nonblock    (** open in non-blocking mode. *)
+(** Opening modes for {!Stdlib.open_out_gen} and
+  {!Stdlib.open_in_gen}. *)
+
+val open_out : string -> out_channel
+(** Open the named file for writing, and return a new output channel
+   on that file, positioned at the beginning of the file. The
+   file is truncated to zero length if it already exists. It
+   is created if it does not already exists. *)
+
+val open_out_bin : string -> out_channel
+(** Same as {!Stdlib.open_out}, but the file is opened in binary mode,
+   so that no translation takes place during writes. On operating
+   systems that do not distinguish between text mode and binary
+   mode, this function behaves like {!Stdlib.open_out}. *)
+
+val open_out_gen : open_flag list -> int -> string -> out_channel
+(** [open_out_gen mode perm filename] opens the named file for writing,
+   as described above. The extra argument [mode]
+   specifies the opening mode. The extra argument [perm] specifies
+   the file permissions, in case the file must be created.
+   {!Stdlib.open_out} and {!Stdlib.open_out_bin} are special
+   cases of this function. *)
+
+val flush : out_channel -> unit
+(** Flush the buffer associated with the given output channel,
+   performing all pending writes on that channel.
+   Interactive programs must be careful about flushing standard
+   output and standard error at the right time. *)
+
+val flush_all : unit -> unit
+(** Flush all open output channels; ignore errors. *)
+
+val output_char : out_channel -> char -> unit
+(** Write the character on the given output channel. *)
+
+val output_string : out_channel -> string -> unit
+(** Write the string on the given output channel. *)
+
+val output_bytes : out_channel -> bytes -> unit
+(** Write the byte sequence on the given output channel.
+   @since 4.02.0 *)
+
+val output : out_channel -> bytes -> int -> int -> unit
+(** [output oc buf pos len] writes [len] characters from byte sequence [buf],
+   starting at offset [pos], to the given output channel [oc].
+   @raise Invalid_argument if [pos] and [len] do not
+   designate a valid range of [buf]. *)
+
+val output_substring : out_channel -> string -> int -> int -> unit
+(** Same as [output] but take a string as argument instead of
+   a byte sequence.
+   @since 4.02.0 *)
+
+val output_byte : out_channel -> int -> unit
+(** Write one 8-bit integer (as the single character with that code)
+   on the given output channel. The given integer is taken modulo
+   256. *)
+
+val output_binary_int : out_channel -> int -> unit
+(** Write one integer in binary format (4 bytes, big-endian)
+   on the given output channel.
+   The given integer is taken modulo 2{^32}.
+   The only reliable way to read it back is through the
+   {!Stdlib.input_binary_int} function. The format is compatible across
+   all machines for a given version of OCaml. *)
+
+val output_value : out_channel -> 'a -> unit
+(** Write the representation of a structured value of any type
+   to a channel. Circularities and sharing inside the value
+   are detected and preserved. The object can be read back,
+   by the function {!Stdlib.input_value}. See the description of module
+   {!Marshal} for more information. {!Stdlib.output_value} is equivalent
+   to {!Marshal.to_channel} with an empty list of flags. *)
+
+val seek_out : out_channel -> int -> unit
+(** [seek_out chan pos] sets the current writing position to [pos]
+   for channel [chan]. This works only for regular files. On
+   files of other kinds (such as terminals, pipes and sockets),
+   the behavior is unspecified. *)
+
+val pos_out : out_channel -> int
+(** Return the current writing position for the given channel.  Does
+    not work on channels opened with the [Open_append] flag (returns
+    unspecified results).
+    For files opened in text mode under Windows, the returned position
+    is approximate (owing to end-of-line conversion); in particular,
+    saving the current position with [pos_out], then going back to
+    this position using [seek_out] will not work.  For this
+    programming idiom to work reliably and portably, the file must be
+    opened in binary mode. *)
+
+val out_channel_length : out_channel -> int
+(** Return the size (number of characters) of the regular file
+   on which the given channel is opened.  If the channel is opened
+    on a file that is not a regular file, the result is meaningless. *)
+
+val close_out : out_channel -> unit
+(** Close the given channel, flushing all buffered write operations.
+   Output functions raise a [Sys_error] exception when they are
+   applied to a closed output channel, except [close_out] and [flush],
+   which do nothing when applied to an already closed channel.
+   Note that [close_out] may raise [Sys_error] if the operating
+   system signals an error when flushing or closing. *)
+
+val close_out_noerr : out_channel -> unit
+(** Same as [close_out], but ignore all errors. *)
+
+val set_binary_mode_out : out_channel -> bool -> unit
+(** [set_binary_mode_out oc true] sets the channel [oc] to binary
+   mode: no translations take place during output.
+   [set_binary_mode_out oc false] sets the channel [oc] to text
+   mode: depending on the operating system, some translations
+   may take place during output.  For instance, under Windows,
+   end-of-lines will be translated from [\n] to [\r\n].
+   This function has no effect under operating systems that
+   do not distinguish between text mode and binary mode. *)
+
+
+(** {2 General input functions} *)
+
+val open_in : string -> in_channel
+(** Open the named file for reading, and return a new input channel
+   on that file, positioned at the beginning of the file. *)
+
+val open_in_bin : string -> in_channel
+(** Same as {!Stdlib.open_in}, but the file is opened in binary mode,
+   so that no translation takes place during reads. On operating
+   systems that do not distinguish between text mode and binary
+   mode, this function behaves like {!Stdlib.open_in}. *)
+
+val open_in_gen : open_flag list -> int -> string -> in_channel
+(** [open_in_gen mode perm filename] opens the named file for reading,
+   as described above. The extra arguments
+   [mode] and [perm] specify the opening mode and file permissions.
+   {!Stdlib.open_in} and {!Stdlib.open_in_bin} are special
+   cases of this function. *)
+
+val input_char : in_channel -> char
+(** Read one character from the given input channel.
+   @raise End_of_file if there are no more characters to read. *)
+
+val input_line : in_channel -> string
+(** Read characters from the given input channel, until a
+   newline character is encountered. Return the string of
+   all characters read, without the newline character at the end.
+   @raise End_of_file if the end of the file is reached
+   at the beginning of line. *)
+
+val input : in_channel -> bytes -> int -> int -> int
+(** [input ic buf pos len] reads up to [len] characters from
+   the given channel [ic], storing them in byte sequence [buf], starting at
+   character number [pos].
+   It returns the actual number of characters read, between 0 and
+   [len] (inclusive).
+   A return value of 0 means that the end of file was reached.
+   A return value between 0 and [len] exclusive means that
+   not all requested [len] characters were read, either because
+   no more characters were available at that time, or because
+   the implementation found it convenient to do a partial read;
+   [input] must be called again to read the remaining characters,
+   if desired.  (See also {!Stdlib.really_input} for reading
+   exactly [len] characters.)
+   Exception [Invalid_argument "input"] is raised if [pos] and [len]
+   do not designate a valid range of [buf]. *)
+
+val really_input : in_channel -> bytes -> int -> int -> unit
+(** [really_input ic buf pos len] reads [len] characters from channel [ic],
+   storing them in byte sequence [buf], starting at character number [pos].
+   @raise End_of_file if the end of file is reached before [len]
+   characters have been read.
+   @raise Invalid_argument if
+   [pos] and [len] do not designate a valid range of [buf]. *)
+
+val really_input_string : in_channel -> int -> string
+(** [really_input_string ic len] reads [len] characters from channel [ic]
+   and returns them in a new string.
+   @raise End_of_file if the end of file is reached before [len]
+   characters have been read.
+   @since 4.02.0 *)
+
+val input_byte : in_channel -> int
+(** Same as {!Stdlib.input_char}, but return the 8-bit integer representing
+   the character.
+   @raise End_of_file if the end of file was reached. *)
+
+val input_binary_int : in_channel -> int
+(** Read an integer encoded in binary format (4 bytes, big-endian)
+   from the given input channel. See {!Stdlib.output_binary_int}.
+   @raise End_of_file if the end of file was reached while reading the
+   integer. *)
+
+val input_value : in_channel -> 'a
+(** Read the representation of a structured value, as produced
+   by {!Stdlib.output_value}, and return the corresponding value.
+   This function is identical to {!Marshal.from_channel};
+   see the description of module {!Marshal} for more information,
+   in particular concerning the lack of type safety. *)
+
+val seek_in : in_channel -> int -> unit
+(** [seek_in chan pos] sets the current reading position to [pos]
+   for channel [chan]. This works only for regular files. On
+   files of other kinds, the behavior is unspecified. *)
+
+val pos_in : in_channel -> int
+(** Return the current reading position for the given channel.  For
+    files opened in text mode under Windows, the returned position is
+    approximate (owing to end-of-line conversion); in particular,
+    saving the current position with [pos_in], then going back to this
+    position using [seek_in] will not work.  For this programming
+    idiom to work reliably and portably, the file must be opened in
+    binary mode. *)
+
+val in_channel_length : in_channel -> int
+(** Return the size (number of characters) of the regular file
+    on which the given channel is opened.  If the channel is opened
+    on a file that is not a regular file, the result is meaningless.
+    The returned size does not take into account the end-of-line
+    translations that can be performed when reading from a channel
+    opened in text mode. *)
+
+val close_in : in_channel -> unit
+(** Close the given channel.  Input functions raise a [Sys_error]
+  exception when they are applied to a closed input channel,
+  except [close_in], which does nothing when applied to an already
+  closed channel. *)
+
+val close_in_noerr : in_channel -> unit
+(** Same as [close_in], but ignore all errors. *)
+
+val set_binary_mode_in : in_channel -> bool -> unit
+(** [set_binary_mode_in ic true] sets the channel [ic] to binary
+   mode: no translations take place during input.
+   [set_binary_mode_out ic false] sets the channel [ic] to text
+   mode: depending on the operating system, some translations
+   may take place during input.  For instance, under Windows,
+   end-of-lines will be translated from [\r\n] to [\n].
+   This function has no effect under operating systems that
+   do not distinguish between text mode and binary mode. *)
+
+
+(** {2 Operations on large files} *)
+
+module LargeFile :
+  sig
+    val seek_out : out_channel -> int64 -> unit
+    val pos_out : out_channel -> int64
+    val out_channel_length : out_channel -> int64
+    val seek_in : in_channel -> int64 -> unit
+    val pos_in : in_channel -> int64
+    val in_channel_length : in_channel -> int64
+  end
+(** Operations on large files.
+  This sub-module provides 64-bit variants of the channel functions
+  that manipulate file positions and file sizes.  By representing
+  positions and sizes by 64-bit integers (type [int64]) instead of
+  regular integers (type [int]), these alternate functions allow
+  operating on files whose sizes are greater than [max_int]. *)
+
+(** {1 References} *)
+
+type 'a ref = { mutable contents : 'a }
+(** The type of references (mutable indirection cells) containing
+   a value of type ['a]. *)
+
+external ref : 'a -> 'a ref = "%makemutable"
+(** Return a fresh reference containing the given value. *)
+
+external ( ! ) : 'a ref -> 'a = "%field0"
+(** [!r] returns the current contents of reference [r].
+   Equivalent to [fun r -> r.contents].
+   Unary operator, see {!Ocaml_operators} for more information.
+*)
+
+external ( := ) : 'a ref -> 'a -> unit = "%setfield0"
+(** [r := a] stores the value of [a] in reference [r].
+   Equivalent to [fun r v -> r.contents <- v].
+   Right-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+external incr : int ref -> unit = "%incr"
+(** Increment the integer contained in the given reference.
+   Equivalent to [fun r -> r := succ !r]. *)
+
+external decr : int ref -> unit = "%decr"
+(** Decrement the integer contained in the given reference.
+   Equivalent to [fun r -> r := pred !r]. *)
+
+(** {1 Result type} *)
+
+(** @since 4.03.0 *)
+type ('a,'b) result = Ok of 'a | Error of 'b
+
+(** {1 Operations on format strings} *)
+
+(** Format strings are character strings with special lexical conventions
+  that defines the functionality of formatted input/output functions. Format
+  strings are used to read data with formatted input functions from module
+  {!Scanf} and to print data with formatted output functions from modules
+  {!Printf} and {!Format}.
+
+  Format strings are made of three kinds of entities:
+  - {e conversions specifications}, introduced by the special character ['%']
+    followed by one or more characters specifying what kind of argument to
+    read or print,
+  - {e formatting indications}, introduced by the special character ['@']
+    followed by one or more characters specifying how to read or print the
+    argument,
+  - {e plain characters} that are regular characters with usual lexical
+    conventions. Plain characters specify string literals to be read in the
+    input or printed in the output.
+
+  There is an additional lexical rule to escape the special characters ['%']
+  and ['@'] in format strings: if a special character follows a ['%']
+  character, it is treated as a plain character. In other words, ["%%"] is
+  considered as a plain ['%'] and ["%@"] as a plain ['@'].
+
+  For more information about conversion specifications and formatting
+  indications available, read the documentation of modules {!Scanf},
+  {!Printf} and {!Format}.
+*)
+
+(** Format strings have a general and highly polymorphic type
+    [('a, 'b, 'c, 'd, 'e, 'f) format6].
+    The two simplified types, [format] and [format4] below are
+    included for backward compatibility with earlier releases of
+    OCaml.
+
+    The meaning of format string type parameters is as follows:
+
+    - ['a] is the type of the parameters of the format for formatted output
+      functions ([printf]-style functions);
+      ['a] is the type of the values read by the format for formatted input
+      functions ([scanf]-style functions).
+
+    - ['b] is the type of input source for formatted input functions and the
+      type of output target for formatted output functions.
+      For [printf]-style functions from module {!Printf}, ['b] is typically
+      [out_channel];
+      for [printf]-style functions from module {!Format}, ['b] is typically
+      {!type:Format.formatter};
+      for [scanf]-style functions from module {!Scanf}, ['b] is typically
+      {!Scanf.Scanning.in_channel}.
+
+      Type argument ['b] is also the type of the first argument given to
+      user's defined printing functions for [%a] and [%t] conversions,
+      and user's defined reading functions for [%r] conversion.
+
+    - ['c] is the type of the result of the [%a] and [%t] printing
+      functions, and also the type of the argument transmitted to the
+      first argument of [kprintf]-style functions or to the
+      [kscanf]-style functions.
+
+    - ['d] is the type of parameters for the [scanf]-style functions.
+
+    - ['e] is the type of the receiver function for the [scanf]-style functions.
+
+    - ['f] is the final result type of a formatted input/output function
+      invocation: for the [printf]-style functions, it is typically [unit];
+      for the [scanf]-style functions, it is typically the result type of the
+      receiver function.
+*)
+
+type ('a, 'b, 'c, 'd, 'e, 'f) format6 =
+  ('a, 'b, 'c, 'd, 'e, 'f) CamlinternalFormatBasics.format6
+
+type ('a, 'b, 'c, 'd) format4 = ('a, 'b, 'c, 'c, 'c, 'd) format6
+
+type ('a, 'b, 'c) format = ('a, 'b, 'c, 'c) format4
+
+val string_of_format : ('a, 'b, 'c, 'd, 'e, 'f) format6 -> string
+(** Converts a format string into a string. *)
+
+external format_of_string :
+  ('a, 'b, 'c, 'd, 'e, 'f) format6 ->
+  ('a, 'b, 'c, 'd, 'e, 'f) format6 = "%identity"
+(** [format_of_string s] returns a format string read from the string
+    literal [s].
+    Note: [format_of_string] can not convert a string argument that is not a
+    literal. If you need this functionality, use the more general
+    {!Scanf.format_from_string} function.
+*)
+
+val ( ^^ ) :
+  ('a, 'b, 'c, 'd, 'e, 'f) format6 ->
+  ('f, 'b, 'c, 'e, 'g, 'h) format6 ->
+  ('a, 'b, 'c, 'd, 'g, 'h) format6
+(** [f1 ^^ f2] catenates format strings [f1] and [f2]. The result is a
+  format string that behaves as the concatenation of format strings [f1] and
+  [f2]: in case of formatted output, it accepts arguments from [f1], then
+  arguments from [f2]; in case of formatted input, it returns results from
+  [f1], then results from [f2].
+  Right-associative operator, see {!Ocaml_operators} for more information.
+*)
+
+(** {1 Program termination} *)
+
+val exit : int -> 'a
+(** Terminate the process, returning the given status code
+   to the operating system: usually 0 to indicate no errors,
+   and a small positive integer to indicate failure.
+   All open output channels are flushed with [flush_all].
+   An implicit [exit 0] is performed each time a program
+   terminates normally.  An implicit [exit 2] is performed if the program
+   terminates early because of an uncaught exception. *)
+
+val at_exit : (unit -> unit) -> unit
+(** Register the given function to be called at program termination
+   time. The functions registered with [at_exit] will be called when
+   the program does any of the following:
+   - executes {!Stdlib.exit}
+   - terminates, either normally or because of an uncaught
+     exception
+   - executes the C function [caml_shutdown].
+   The functions are called in 'last in, first out' order: the
+   function most recently added with [at_exit] is called first. *)
+
+(**/**)
+
+(* The following is for system use only. Do not call directly. *)
+
+val valid_float_lexem : string -> string
+
+val unsafe_really_input : in_channel -> bytes -> int -> int -> unit
+
+val do_at_exit : unit -> unit
+
+(**/**)
+
+(** {1:modules Standard library modules } *)
+
+end of file that is lexed
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*                          Benoit Vaugon, ENSTA                          *)
+(*                                                                        *)
+(*   Copyright 2014 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
+
+(* No comments, OCaml stdlib internal use only. *)
+
+type padty = Left | Right | Zeros
+
+type int_conv =
+  | Int_d | Int_pd | Int_sd | Int_i | Int_pi | Int_si
+  | Int_x | Int_Cx | Int_X | Int_CX | Int_o | Int_Co | Int_u
+  | Int_Cd | Int_Ci | Int_Cu
+
+type float_flag_conv =
+  | Float_flag_ | Float_flag_p | Float_flag_s
+type float_kind_conv =
+  | Float_f | Float_e | Float_E | Float_g | Float_G
+  | Float_F | Float_h | Float_H | Float_CF
+type float_conv = float_flag_conv * float_kind_conv
+
+type char_set = string
+
+type counter = Line_counter | Char_counter | Token_counter
+
+type ('a, 'b) padding =
+  | No_padding  : ('a, 'a) padding
+  | Lit_padding : padty * int -> ('a, 'a) padding
+  | Arg_padding : padty -> (int -> 'a, 'a) padding
+
+type pad_option = int option
+
+type ('a, 'b) precision =
+  | No_precision : ('a, 'a) precision
+  | Lit_precision : int -> ('a, 'a) precision
+  | Arg_precision : (int -> 'a, 'a) precision
+
+type prec_option = int option
+
+type ('a, 'b, 'c) custom_arity =
+  | Custom_zero : ('a, string, 'a) custom_arity
+  | Custom_succ : ('a, 'b, 'c) custom_arity ->
+    ('a, 'x -> 'b, 'x -> 'c) custom_arity
+
+type block_type = Pp_hbox | Pp_vbox | Pp_hvbox | Pp_hovbox | Pp_box | Pp_fits
+
+type formatting_lit =
+  | Close_box
+  | Close_tag
+  | Break of string * int * int
+  | FFlush
+  | Force_newline
+  | Flush_newline
+  | Magic_size of string * int
+  | Escaped_at
+  | Escaped_percent
+  | Scan_indic of char
+
+type ('a, 'b, 'c, 'd, 'e, 'f) formatting_gen =
+  | Open_tag : ('a, 'b, 'c, 'd, 'e, 'f) format6 ->
+    ('a, 'b, 'c, 'd, 'e, 'f) formatting_gen
+  | Open_box : ('a, 'b, 'c, 'd, 'e, 'f) format6 ->
+    ('a, 'b, 'c, 'd, 'e, 'f) formatting_gen
+
+and ('a, 'b, 'c, 'd, 'e, 'f) fmtty =
+    ('a, 'b, 'c, 'd, 'e, 'f,
+     'a, 'b, 'c, 'd, 'e, 'f) fmtty_rel
+and ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+   'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel =
+| Char_ty :                                                 (* %c  *)
+    ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel ->
+    (char -> 'a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     char -> 'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel
+| String_ty :                                               (* %s  *)
+    ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel ->
+    (string -> 'a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     string -> 'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel
+| Int_ty :                                                  (* %d  *)
+    ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel ->
+    (int -> 'a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     int -> 'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel
+| Int32_ty :                                                (* %ld *)
+    ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel ->
+    (int32 -> 'a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     int32 -> 'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel
+| Nativeint_ty :                                            (* %nd *)
+    ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel ->
+    (nativeint -> 'a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     nativeint -> 'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel
+| Int64_ty :                                                (* %Ld *)
+    ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel ->
+    (int64 -> 'a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     int64 -> 'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel
+| Float_ty :                                                (* %f  *)
+    ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel ->
+    (float -> 'a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     float -> 'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel
+| Bool_ty :                                                 (* %B  *)
+    ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel ->
+    (bool -> 'a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     bool -> 'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel
+| Format_arg_ty :                                           (* %{...%} *)
+    ('g, 'h, 'i, 'j, 'k, 'l) fmtty *
+    ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel ->
+    (('g, 'h, 'i, 'j, 'k, 'l) format6 -> 'a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     ('g, 'h, 'i, 'j, 'k, 'l) format6 -> 'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel
+| Format_subst_ty :                                         (* %(...%) *)
+    ('g, 'h, 'i, 'j, 'k, 'l,
+     'g1, 'b1, 'c1, 'j1, 'd1, 'a1) fmtty_rel *
+    ('g, 'h, 'i, 'j, 'k, 'l,
+     'g2, 'b2, 'c2, 'j2, 'd2, 'a2) fmtty_rel *
+    ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel ->
+    (('g, 'h, 'i, 'j, 'k, 'l) format6 -> 'g1, 'b1, 'c1, 'j1, 'e1, 'f1,
+     ('g, 'h, 'i, 'j, 'k, 'l) format6 -> 'g2, 'b2, 'c2, 'j2, 'e2, 'f2) fmtty_rel
+
+(* Printf and Format specific constructors. *)
+| Alpha_ty :                                                (* %a  *)
+    ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel ->
+    (('b1 -> 'x -> 'c1) -> 'x -> 'a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     ('b2 -> 'x -> 'c2) -> 'x -> 'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel
+| Theta_ty :                                                (* %t  *)
+    ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel ->
+    (('b1 -> 'c1) -> 'a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     ('b2 -> 'c2) -> 'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel
+| Any_ty :                                         (* Used for custom formats *)
+    ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel ->
+    ('x -> 'a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     'x -> 'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel
+
+(* Scanf specific constructor. *)
+| Reader_ty :                                               (* %r  *)
+    ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel ->
+    ('x -> 'a1, 'b1, 'c1, ('b1 -> 'x) -> 'd1, 'e1, 'f1,
+     'x -> 'a2, 'b2, 'c2, ('b2 -> 'x) -> 'd2, 'e2, 'f2) fmtty_rel
+| Ignored_reader_ty :                                       (* %_r  *)
+    ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+     'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel ->
+    ('a1, 'b1, 'c1, ('b1 -> 'x) -> 'd1, 'e1, 'f1,
+     'a2, 'b2, 'c2, ('b2 -> 'x) -> 'd2, 'e2, 'f2) fmtty_rel
+
+| End_of_fmtty :
+    ('f1, 'b1, 'c1, 'd1, 'd1, 'f1,
+     'f2, 'b2, 'c2, 'd2, 'd2, 'f2) fmtty_rel
+
+(**)
+
+(** List of format elements. *)
+and ('a, 'b, 'c, 'd, 'e, 'f) fmt =
+| Char :                                                   (* %c *)
+    ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      (char -> 'a, 'b, 'c, 'd, 'e, 'f) fmt
+| Caml_char :                                              (* %C *)
+    ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      (char -> 'a, 'b, 'c, 'd, 'e, 'f) fmt
+| String :                                                 (* %s *)
+    ('x, string -> 'a) padding * ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      ('x, 'b, 'c, 'd, 'e, 'f) fmt
+| Caml_string :                                            (* %S *)
+    ('x, string -> 'a) padding * ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      ('x, 'b, 'c, 'd, 'e, 'f) fmt
+| Int :                                                    (* %[dixXuo] *)
+    int_conv * ('x, 'y) padding * ('y, int -> 'a) precision *
+    ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      ('x, 'b, 'c, 'd, 'e, 'f) fmt
+| Int32 :                                                  (* %l[dixXuo] *)
+    int_conv * ('x, 'y) padding * ('y, int32 -> 'a) precision *
+    ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      ('x, 'b, 'c, 'd, 'e, 'f) fmt
+| Nativeint :                                              (* %n[dixXuo] *)
+    int_conv * ('x, 'y) padding * ('y, nativeint -> 'a) precision *
+    ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      ('x, 'b, 'c, 'd, 'e, 'f) fmt
+| Int64 :                                                  (* %L[dixXuo] *)
+    int_conv * ('x, 'y) padding * ('y, int64 -> 'a) precision *
+    ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      ('x, 'b, 'c, 'd, 'e, 'f) fmt
+| Float :                                                  (* %[feEgGFhH] *)
+    float_conv * ('x, 'y) padding * ('y, float -> 'a) precision *
+    ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      ('x, 'b, 'c, 'd, 'e, 'f) fmt
+| Bool :                                                   (* %[bB] *)
+    ('x, bool -> 'a) padding * ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      ('x, 'b, 'c, 'd, 'e, 'f) fmt
+| Flush :                                                  (* %! *)
+    ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      ('a, 'b, 'c, 'd, 'e, 'f) fmt
+
+| String_literal :                                         (* abc *)
+    string * ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      ('a, 'b, 'c, 'd, 'e, 'f) fmt
+| Char_literal :                                           (* x *)
+    char * ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      ('a, 'b, 'c, 'd, 'e, 'f) fmt
+
+| Format_arg :                                             (* %{...%} *)
+    pad_option * ('g, 'h, 'i, 'j, 'k, 'l) fmtty *
+    ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      (('g, 'h, 'i, 'j, 'k, 'l) format6 -> 'a, 'b, 'c, 'd, 'e, 'f) fmt
+| Format_subst :                                           (* %(...%) *)
+    pad_option *
+    ('g, 'h, 'i, 'j, 'k, 'l,
+     'g2, 'b, 'c, 'j2, 'd, 'a) fmtty_rel *
+    ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+    (('g, 'h, 'i, 'j, 'k, 'l) format6 -> 'g2, 'b, 'c, 'j2, 'e, 'f) fmt
+
+(* Printf and Format specific constructor. *)
+| Alpha :                                                  (* %a *)
+    ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      (('b -> 'x -> 'c) -> 'x -> 'a, 'b, 'c, 'd, 'e, 'f) fmt
+| Theta :                                                  (* %t *)
+    ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      (('b -> 'c) -> 'a, 'b, 'c, 'd, 'e, 'f) fmt
+
+(* Format specific constructor: *)
+| Formatting_lit :                                         (* @_ *)
+    formatting_lit * ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      ('a, 'b, 'c, 'd, 'e, 'f) fmt
+| Formatting_gen :                                             (* @_ *)
+    ('a1, 'b, 'c, 'd1, 'e1, 'f1) formatting_gen *
+    ('f1, 'b, 'c, 'e1, 'e2, 'f2) fmt -> ('a1, 'b, 'c, 'd1, 'e2, 'f2) fmt
+
+(* Scanf specific constructors: *)
+| Reader :                                                 (* %r *)
+    ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      ('x -> 'a, 'b, 'c, ('b -> 'x) -> 'd, 'e, 'f) fmt
+| Scan_char_set :                                          (* %[...] *)
+    pad_option * char_set * ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      (string -> 'a, 'b, 'c, 'd, 'e, 'f) fmt
+| Scan_get_counter :                                       (* %[nlNL] *)
+    counter * ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+      (int -> 'a, 'b, 'c, 'd, 'e, 'f) fmt
+| Scan_next_char :                                         (* %0c *)
+    ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+    (char -> 'a, 'b, 'c, 'd, 'e, 'f) fmt
+  (* %0c behaves as %c for printing, but when scanning it does not
+     consume the character from the input stream *)
+| Ignored_param :                                          (* %_ *)
+    ('a, 'b, 'c, 'd, 'y, 'x) ignored * ('x, 'b, 'c, 'y, 'e, 'f) fmt ->
+      ('a, 'b, 'c, 'd, 'e, 'f) fmt
+
+(* Custom printing format *)
+| Custom :
+    ('a, 'x, 'y) custom_arity * (unit -> 'x) * ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+    ('y, 'b, 'c, 'd, 'e, 'f) fmt
+
+| End_of_format :
+      ('f, 'b, 'c, 'e, 'e, 'f) fmt
+
+and ('a, 'b, 'c, 'd, 'e, 'f) ignored =
+  | Ignored_char :
+      ('a, 'b, 'c, 'd, 'd, 'a) ignored
+  | Ignored_caml_char :
+      ('a, 'b, 'c, 'd, 'd, 'a) ignored
+  | Ignored_string :
+      pad_option -> ('a, 'b, 'c, 'd, 'd, 'a) ignored
+  | Ignored_caml_string :
+      pad_option -> ('a, 'b, 'c, 'd, 'd, 'a) ignored
+  | Ignored_int :
+      int_conv * pad_option -> ('a, 'b, 'c, 'd, 'd, 'a) ignored
+  | Ignored_int32 :
+      int_conv * pad_option -> ('a, 'b, 'c, 'd, 'd, 'a) ignored
+  | Ignored_nativeint :
+      int_conv * pad_option -> ('a, 'b, 'c, 'd, 'd, 'a) ignored
+  | Ignored_int64 :
+      int_conv * pad_option -> ('a, 'b, 'c, 'd, 'd, 'a) ignored
+  | Ignored_float :
+      pad_option * prec_option -> ('a, 'b, 'c, 'd, 'd, 'a) ignored
+  | Ignored_bool :
+      pad_option -> ('a, 'b, 'c, 'd, 'd, 'a) ignored
+  | Ignored_format_arg :
+      pad_option * ('g, 'h, 'i, 'j, 'k, 'l) fmtty ->
+        ('a, 'b, 'c, 'd, 'd, 'a) ignored
+  | Ignored_format_subst :
+      pad_option * ('a, 'b, 'c, 'd, 'e, 'f) fmtty ->
+        ('a, 'b, 'c, 'd, 'e, 'f) ignored
+  | Ignored_reader :
+      ('a, 'b, 'c, ('b -> 'x) -> 'd, 'd, 'a) ignored
+  | Ignored_scan_char_set :
+      pad_option * char_set -> ('a, 'b, 'c, 'd, 'd, 'a) ignored
+  | Ignored_scan_get_counter :
+      counter -> ('a, 'b, 'c, 'd, 'd, 'a) ignored
+  | Ignored_scan_next_char :
+      ('a, 'b, 'c, 'd, 'd, 'a) ignored
+
+and ('a, 'b, 'c, 'd, 'e, 'f) format6 =
+  Format of ('a, 'b, 'c, 'd, 'e, 'f) fmt * string
+
+val concat_fmtty :
+  ('g1, 'b1, 'c1, 'j1, 'd1, 'a1,
+   'g2, 'b2, 'c2, 'j2, 'd2, 'a2) fmtty_rel ->
+  ('a1, 'b1, 'c1, 'd1, 'e1, 'f1,
+   'a2, 'b2, 'c2, 'd2, 'e2, 'f2) fmtty_rel ->
+  ('g1, 'b1, 'c1, 'j1, 'e1, 'f1,
+   'g2, 'b2, 'c2, 'j2, 'e2, 'f2) fmtty_rel
+
+val erase_rel :
+  ('a, 'b, 'c, 'd, 'e, 'f,
+   'g, 'h, 'i, 'j, 'k, 'l) fmtty_rel -> ('a, 'b, 'c, 'd, 'e, 'f) fmtty
+
+val concat_fmt :
+    ('a, 'b, 'c, 'd, 'e, 'f) fmt ->
+    ('f, 'b, 'c, 'e, 'g, 'h) fmt ->
+    ('a, 'b, 'c, 'd, 'g, 'h) fmt
+
+end of file that is lexed
+(**************************************************************************)
+(*                                                                        *)
+(*  GOSPEL -- A Specification Language for OCaml                          *)
+(*                                                                        *)
+(*  Copyright (c) 2018- The VOCaL Project                                 *)
+(*                                                                        *)
+(*  This software is free software, distributed under the MIT license     *)
+(*  (as described in file LICENSE enclosed).                              *)
+(**************************************************************************)
+
+(* This file contains the GOSPEL standard library.
+   It is automatically opened.
+
+   The following are built-in in GOSPEL:
+
+   type unit
+   type string
+   type char
+   type float
+   type bool
+   type integer
+   type int
+
+   type 'a option
+   function None: 'a option
+   function Some (x: 'a) : 'a option
+
+   type 'a list
+   function ([]): 'a list
+   function (::) (x: 'a) (l: 'a list) : 'a list
+
+   predicate (=) (x y: 'a)
+*)
+
+[@@@gospel
+# 35 "gospelstdlib.mli"
+ {| type 'a seq |}
+# 35 "gospelstdlib.mli"
+                 ]
+(** The type for finite sequences. *)
+
+[@@@gospel
+# 38 "gospelstdlib.mli"
+ {| type 'a bag |}
+# 38 "gospelstdlib.mli"
+                 ]
+(** The type for finite unordered multisets. *)
+
+[@@@gospel
+# 41 "gospelstdlib.mli"
+ {| type 'a ref |}
+# 41 "gospelstdlib.mli"
+                 ]
+(** The type for references. *)
+
+[@@@gospel
+# 44 "gospelstdlib.mli"
+ {| type 'a set |}
+# 44 "gospelstdlib.mli"
+                 ]
+(** The type for finite unordered sets. *)
+
+(** {1 Arithmetic}
+
+    The type [integer] is built-in. This is the type of arbitrary precision
+    integers, not to be confused with OCaml's type [int] (machine, bounded
+    integers). *)
+
+[@@@gospel
+# 53 "gospelstdlib.mli"
+ {| function succ (x: integer) : integer |}
+# 53 "gospelstdlib.mli"
+                                          ]
+[@@@gospel
+# 54 "gospelstdlib.mli"
+ {| function pred (x: integer) : integer |}
+# 54 "gospelstdlib.mli"
+                                          ]
+
+[@@@gospel
+# 56 "gospelstdlib.mli"
+ {| function (-_) (x: integer) : integer |}
+# 56 "gospelstdlib.mli"
+                                          ]
+[@@@gospel
+# 57 "gospelstdlib.mli"
+ {| function (+) (x y: integer) : integer |}
+# 57 "gospelstdlib.mli"
+                                           ]
+[@@@gospel
+# 58 "gospelstdlib.mli"
+ {| function (-) (x y: integer) : integer |}
+# 58 "gospelstdlib.mli"
+                                           ]
+[@@@gospel
+# 59 "gospelstdlib.mli"
+ {| function ( * ) (x y: integer) : integer |}
+# 59 "gospelstdlib.mli"
+                                             ]
+[@@@gospel
+# 60 "gospelstdlib.mli"
+ {| function (/) (x y: integer) : integer |}
+# 60 "gospelstdlib.mli"
+                                           ]
+[@@@gospel
+# 61 "gospelstdlib.mli"
+ {| function mod (x y: integer) : integer |}
+# 61 "gospelstdlib.mli"
+                                           ]
+
+[@@@gospel
+# 63 "gospelstdlib.mli"
+ {| function pow (x y: integer) : integer |}
+# 63 "gospelstdlib.mli"
+                                           ]
+[@@@gospel
+# 64 "gospelstdlib.mli"
+ {| function abs (x:integer) : integer |}
+# 64 "gospelstdlib.mli"
+                                        ]
+
+[@@@gospel
+# 66 "gospelstdlib.mli"
+ {| function min (x y : integer) : integer |}
+# 66 "gospelstdlib.mli"
+                                            ]
+[@@@gospel
+# 67 "gospelstdlib.mli"
+ {| function max (x y : integer) : integer |}
+# 67 "gospelstdlib.mli"
+                                            ]
+
+(** {2 Comparisons} *)
+
+[@@@gospel
+# 71 "gospelstdlib.mli"
+ {| predicate (>) (x y: integer) |}
+# 71 "gospelstdlib.mli"
+                                  ]
+[@@@gospel
+# 72 "gospelstdlib.mli"
+ {| predicate (>=) (x y: integer) |}
+# 72 "gospelstdlib.mli"
+                                   ]
+[@@@gospel
+# 73 "gospelstdlib.mli"
+ {| predicate (<) (x y: integer) |}
+# 73 "gospelstdlib.mli"
+                                  ]
+[@@@gospel
+# 74 "gospelstdlib.mli"
+ {| predicate (<=) (x y: integer) |}
+# 74 "gospelstdlib.mli"
+                                   ]
+
+(** {2 Bitwise operations} *)
+
+[@@@gospel
+# 78 "gospelstdlib.mli"
+ {| function logand (x y: integer) : integer |}
+# 78 "gospelstdlib.mli"
+                                              ]
+[@@@gospel
+# 79 "gospelstdlib.mli"
+ {| function logor (x y: integer) : integer |}
+# 79 "gospelstdlib.mli"
+                                             ]
+[@@@gospel
+# 80 "gospelstdlib.mli"
+ {| function logxor (x y: integer) : integer |}
+# 80 "gospelstdlib.mli"
+                                              ]
+[@@@gospel
+# 81 "gospelstdlib.mli"
+ {| function lognot (x: integer) : integer |}
+# 81 "gospelstdlib.mli"
+                                            ]
+
+[@@@gospel
+# 83 "gospelstdlib.mli"
+ {| function shift_left (x y: integer) : integer |}
+# 83 "gospelstdlib.mli"
+                                                  ]
+(** Shifts to the left, equivalent to a multiplication by a power of two *)
+
+[@@@gospel
+# 86 "gospelstdlib.mli"
+ {| function shift_right (x y: integer) : integer |}
+# 86 "gospelstdlib.mli"
+                                                   ]
+(** Shifts to the right, equivalent to a multiplication by a power of two with
+    rounding toward -oo *)
+
+[@@@gospel
+# 90 "gospelstdlib.mli"
+ {| function shift_right_trunc (x y: integer) : integer |}
+# 90 "gospelstdlib.mli"
+                                                         ]
+(** Shift to the right with truncation, equivalent to a multiplication by a
+    power of two with rounding toward 0 *)
+
+(** {2 Machine integers}
+
+    There is a coercion from type [int] to type [integer], so that Gospel
+    specifications can be written using type [integer] only, and yet use OCaml's
+    variables of type [int]. The Gospel typechecker will automatically apply
+    [integer_of_int] whenever necessary. *)
+
+[@@@gospel
+# 101 "gospelstdlib.mli"
+ {| function integer_of_int (x: int) : integer |}[@@gospel
+# 102 "gospelstdlib.mli"
+ {| coercion |}]
+# 102 "gospelstdlib.mli"
+              ]
+
+[@@@gospel
+# 104 "gospelstdlib.mli"
+ {| function max_int : integer |}
+# 104 "gospelstdlib.mli"
+                                ]
+[@@@gospel
+# 105 "gospelstdlib.mli"
+ {| function min_int : integer |}
+# 105 "gospelstdlib.mli"
+                                ]
+
+(** {1 Couples} *)
+
+[@@@gospel
+# 109 "gospelstdlib.mli"
+ {| function fst (p: 'a * 'b) : 'a |}
+# 109 "gospelstdlib.mli"
+                                    ]
+(** [fst (x, y)] is [x]. *)
+
+[@@@gospel
+# 112 "gospelstdlib.mli"
+ {| function snd (p: 'a * 'b) : 'b |}
+# 112 "gospelstdlib.mli"
+                                    ]
+(** [snd (x, y)] is [y]. *)
+
+(** {1 References} *)
+
+[@@@gospel
+# 117 "gospelstdlib.mli"
+ {| function (!_) (r: 'a ref) : 'a |}
+# 117 "gospelstdlib.mli"
+                                    ]
+(** Reference content access operator. *)
+
+(** {1 Sequences} *)
+
+[@@@gospel
+# 122 "gospelstdlib.mli"
+ {| function (++) (s s': 'a seq) : 'a seq |}
+# 122 "gospelstdlib.mli"
+                                           ]
+(** [s ++ s'] is the sequence [s] followed by the sequence [s']. *)
+
+[@@@gospel
+# 125 "gospelstdlib.mli"
+ {| function ([_]) (s: 'a seq) (i: integer): 'a |}
+# 125 "gospelstdlib.mli"
+                                                 ]
+(** [s\[i\]] is the [i]th element of the sequence [s]. *)
+
+[@@@gospel
+# 128 "gospelstdlib.mli"
+ {| function ([_.._]) (s: 'a seq) (i1: integer) (i2: integer): 'a seq |}
+# 128 "gospelstdlib.mli"
+                                                                       ]
+[@@@gospel
+# 129 "gospelstdlib.mli"
+ {| function ([_..]) (s: 'a seq) (i: integer): 'a seq |}
+# 129 "gospelstdlib.mli"
+                                                       ]
+[@@@gospel
+# 130 "gospelstdlib.mli"
+ {| function ([.._]) (s: 'a seq) (i: integer): 'a seq |}
+# 130 "gospelstdlib.mli"
+                                                       ]
+
+module Seq : sig
+  [@@@gospel
+# 133 "gospelstdlib.mli"
+   {| type 'a t = 'a seq |}
+# 133 "gospelstdlib.mli"
+                          ]
+  (** An alias for {!'a seq} *)
+
+  [@@@gospel
+# 136 "gospelstdlib.mli"
+   {| function length (s: 'a t): integer |}
+# 136 "gospelstdlib.mli"
+                                          ]
+  (** [length s] is the length of the sequence [s]. *)
+
+  [@@@gospel
+# 139 "gospelstdlib.mli"
+   {| function empty : 'a t |}
+# 139 "gospelstdlib.mli"
+                             ]
+  (** [empty] is the empty sequence. *)
+
+  [@@@gospel
+# 142 "gospelstdlib.mli"
+   {| function singleton (x: 'a) : 'a t |}
+# 142 "gospelstdlib.mli"
+                                         ]
+  (** [singleton] is an alias for {!return}. *)
+
+  [@@@gospel
+# 145 "gospelstdlib.mli"
+   {| function init (n: integer) (f: integer -> 'a) : 'a seq |}
+# 145 "gospelstdlib.mli"
+                                                              ]
+  (** [init n f] is the sequence containing [f 0], [f 1], [...] , [f n]. *)
+
+  [@@@gospel
+# 148 "gospelstdlib.mli"
+   {| function cons (x: 'a) (s: 'a t): 'a t |}
+# 148 "gospelstdlib.mli"
+                                             ]
+  (** [cons x s] is the sequence containing [x] followed by the elements of [s]. *)
+
+  [@@@gospel
+# 151 "gospelstdlib.mli"
+   {| function snoc (s: 'a seq) (x: 'a): 'a seq |}
+# 151 "gospelstdlib.mli"
+                                                 ]
+  (** [snoc s x] is the sequence containing the elements of [s] followed by [x]. *)
+
+  [@@@gospel
+# 154 "gospelstdlib.mli"
+   {| function hd (s: 'a t) : 'a |}
+# 154 "gospelstdlib.mli"
+                                  ]
+  (** When [s] contains one or more elements, [hd s] is the first element of
+      [s]. *)
+
+  [@@@gospel
+# 158 "gospelstdlib.mli"
+   {| function tl (s: 'a t) : 'a t |}
+# 158 "gospelstdlib.mli"
+                                    ]
+  (** When [s] contains one or more elements, [tl s] is the sequence of the
+      elements of [s], starting at position 2. *)
+
+  [@@@gospel
+# 162 "gospelstdlib.mli"
+   {| function append (s s': 'a t) : 'a t |}
+# 162 "gospelstdlib.mli"
+                                           ]
+  (** [append s s'] is [s ++ s']. *)
+
+  [@@@gospel
+# 165 "gospelstdlib.mli"
+   {| predicate mem (s: 'a seq) (x: 'a) |}
+# 165 "gospelstdlib.mli"
+                                         ]
+  (** [mem s x] holds iff [x] is in [s]. *)
+
+  [@@@gospel
+# 168 "gospelstdlib.mli"
+   {| function map (f: 'a -> 'b) (s: 'a t) : 'b t |}
+# 168 "gospelstdlib.mli"
+                                                   ]
+  (** [map f s] is a sequence whose elements are the elements of [s],
+      transformed by [f]. *)
+
+  [@@@gospel
+# 172 "gospelstdlib.mli"
+   {| function filter (f: 'a -> bool) (s: 'a t) : 'a t |}
+# 172 "gospelstdlib.mli"
+                                                        ]
+  (** [filter f s] is a sequence whose elements are the elements of [s], that
+      satisfy [f]. *)
+
+  [@@@gospel
+# 176 "gospelstdlib.mli"
+   {| function filter_map (f: 'a -> 'b option) (s: 'a t) : 'b t |}
+# 176 "gospelstdlib.mli"
+                                                                 ]
+  (** [filter_map f s] is a sequence whose elements are the elements of [s],
+      transformed by [f]. An element [x] is dropped whenever [f x] is [None]. *)
+
+  [@@@gospel
+# 180 "gospelstdlib.mli"
+   {| function get (s: 'a t) (i: integer) : 'a |}
+# 180 "gospelstdlib.mli"
+                                                ]
+  (** [get s i] is [s\[i\]]. *)
+
+  [@@@gospel
+# 183 "gospelstdlib.mli"
+   {| function set (s: 'a t) (i: integer) (x: 'a): 'a t |}
+# 183 "gospelstdlib.mli"
+                                                         ]
+  (** [set s i x] is the sequence [s] where the [i]th element is [x]. *)
+
+  [@@@gospel
+# 186 "gospelstdlib.mli"
+   {| function rev (s: 'a seq) : 'a seq |}
+# 186 "gospelstdlib.mli"
+                                         ]
+  (** [rev s] is the sequence containing the same elements as [s], in reverse
+      order. *)
+
+  [@@@gospel
+# 190 "gospelstdlib.mli"
+   {| function rec fold_left (f: 'a -> 'b -> 'a) (acc: 'a) (s: 'b seq) : 'a |}
+# 190 "gospelstdlib.mli"
+                                                                             ]
+  (** [fold_left f acc s] is [f (... (f (f acc s\[0\]) s\[1\]) ...) s\[n-1\]],
+      where [n] is the length of [s]. *)
+
+  [@@@gospel
+# 194 "gospelstdlib.mli"
+   {| function rec fold_right (f: 'a -> 'b -> 'b) (s: 'a seq) (acc: 'b) : 'b |}
+# 194 "gospelstdlib.mli"
+                                                                              ]
+  (** [fold_right f s acc] is [f s\[1\] (f s\[2\] (... (f s\[n\] acc) ...))]
+      where [n] is the length of [s]. *)
+end
+
+(** Lists
+
+    The type ['a list] and the constructors [\[\]] and [(::)] are built-in. *)
+
+module List : sig
+  [@@@gospel
+# 204 "gospelstdlib.mli"
+   {| type 'a t = 'a list |}
+# 204 "gospelstdlib.mli"
+                           ]
+  (** An alias for ['a list]. *)
+
+  [@@@gospel
+# 207 "gospelstdlib.mli"
+   {| function length (l: 'a t) : integer |}
+# 207 "gospelstdlib.mli"
+                                           ]
+  (** [length l] is the number of elements of [l]. *)
+
+  [@@@gospel
+# 210 "gospelstdlib.mli"
+   {| function hd (l: 'a t) : 'a |}
+# 210 "gospelstdlib.mli"
+                                  ]
+  (** When [l] contains one or more elements, [hd s] is the first element of
+      [l]. *)
+
+  [@@@gospel
+# 214 "gospelstdlib.mli"
+   {| function tl (l: 'a t) : 'a t |}
+# 214 "gospelstdlib.mli"
+                                    ]
+  (** When [l] contains one or more elements, [tl l] is the list of the elements
+      of [l], starting at position 2. *)
+
+  [@@@gospel
+# 218 "gospelstdlib.mli"
+   {| function nth (l: 'a t) (i: integer) : 'a |}
+# 218 "gospelstdlib.mli"
+                                                ]
+  (** [nth l i] is the [i]th element of [l]. *)
+
+  [@@@gospel
+# 221 "gospelstdlib.mli"
+   {| function nth_opt (l: 'a t) (i: integer) : 'a option |}
+# 221 "gospelstdlib.mli"
+                                                           ]
+  (** [nth l i] is the [i]th element of [l] if [i] is within the bounds of [l],
+      and [None] otherwise. *)
+
+  [@@@gospel
+# 225 "gospelstdlib.mli"
+   {| function rev (l: 'a t) : 'a t |}
+# 225 "gospelstdlib.mli"
+                                     ]
+  (** [rev l] contains the same elements as [l] in a reverse order. *)
+
+  [@@@gospel
+# 228 "gospelstdlib.mli"
+   {| function init (n: integer) (f: integer -> 'a) : 'a t |}
+# 228 "gospelstdlib.mli"
+                                                            ]
+  (** [init n f] is a list of length [n], with element number [i] initialized
+      with [f i]. *)
+
+  [@@@gospel
+# 232 "gospelstdlib.mli"
+   {| function map (f: 'a -> 'b) (l: 'a t) : 'b t |}
+# 232 "gospelstdlib.mli"
+                                                   ]
+  (** [map f l] applies function [f] to all the elements of [l], and builds a
+      list with the results returned by [f] *)
+
+  [@@@gospel
+# 236 "gospelstdlib.mli"
+   {| function mapi (f: integer -> 'a -> 'b) (l: 'a t) : 'b t |}
+# 236 "gospelstdlib.mli"
+                                                               ]
+  (** Same as {!map}, but the function is applied to the index of the element as
+      first argument, and the element itself as second argument. *)
+
+  [@@@gospel
+# 240 "gospelstdlib.mli"
+   {| function fold_left (f: 'a -> 'b -> 'a) (init: 'a) (l: 'b t) : 'a |}
+# 240 "gospelstdlib.mli"
+                                                                        ]
+  (** [fold_left f init t] is [f (... (f (f init a\[0\]) a\[1\]) ...) a\[n-1\]],
+      where [n] is the length of [t]. *)
+
+  [@@@gospel
+# 244 "gospelstdlib.mli"
+   {| function fold_right (f: 'b -> 'a -> 'a) (l: 'b t) (init: 'a) : 'a |}
+# 244 "gospelstdlib.mli"
+                                                                         ]
+  (** [fold_right f t init] is
+      [f a\[0\] (f a\[1\] ( ... (f a\[n-1\] init) ...))], where [n] is the
+      length of [t]. *)
+
+  [@@@gospel
+# 249 "gospelstdlib.mli"
+   {| function map2 (f: 'a -> 'b -> 'c) (l: 'a t) (l': 'b t) : 'c t |}
+# 249 "gospelstdlib.mli"
+                                                                     ]
+  (** [map2 f l l'] applies function [f] to all the elements of [l] and [l'],
+      and builds a list with the results returned by [f]. *)
+
+  [@@@gospel
+# 253 "gospelstdlib.mli"
+   {| predicate for_all (f: 'a -> bool) (l: 'a t) |}
+# 253 "gospelstdlib.mli"
+                                                   ]
+  (** [for_all f l] holds iff all elements of [l] satisfy the predicate [f]. *)
+
+  [@@@gospel
+# 256 "gospelstdlib.mli"
+   {| predicate _exists (f: 'a -> bool) (l: 'a t) |}
+# 256 "gospelstdlib.mli"
+                                                   ]
+  (** [_exists f l] holds iff at least one element of [l] satisfies [f]. *)
+
+  [@@@gospel
+# 259 "gospelstdlib.mli"
+   {| predicate for_all2 (f: 'a -> 'b -> bool) (l: 'a t) (l': 'b t) |}
+# 259 "gospelstdlib.mli"
+                                                                     ]
+  (** Same as {!for_all}, but for a two-argument predicate. *)
+
+  [@@@gospel
+# 262 "gospelstdlib.mli"
+   {| predicate _exists2 (f: 'a -> 'b -> bool) (l: 'a t) (l': 'b t) |}
+# 262 "gospelstdlib.mli"
+                                                                     ]
+  (** Same as {!_exists}, but for a two-argument predicate. *)
+
+  [@@@gospel
+# 265 "gospelstdlib.mli"
+   {| predicate mem (x: 'a) (l: 'a t) |}
+# 265 "gospelstdlib.mli"
+                                       ]
+  (** [mem x l] holds iff [x] is equal to an element of [l] *)
+
+  [@@@gospel
+# 268 "gospelstdlib.mli"
+   {| function to_seq (s: 'a t) : 'a Seq.t |}[@@gospel
+# 269 "gospelstdlib.mli"
+   {| coercion |}]
+# 269 "gospelstdlib.mli"
+                ]
+
+  [@@@gospel
+# 271 "gospelstdlib.mli"
+   {| function of_seq (s: 'a Seq.t) : 'a t |}
+# 271 "gospelstdlib.mli"
+                                            ]
+end
+
+(** {1 Arrays} *)
+
+module Array : sig
+  [@@@gospel
+# 277 "gospelstdlib.mli"
+   {| type 'a t = 'a array |}
+# 277 "gospelstdlib.mli"
+                            ]
+  (** An alias for the type of arrays. *)
+
+  [@@@gospel
+# 280 "gospelstdlib.mli"
+   {| function length (a: 'a t) : integer |}
+# 280 "gospelstdlib.mli"
+                                           ]
+  (** [length a] is the number of elements of [a]. *)
+
+  [@@@gospel
+# 283 "gospelstdlib.mli"
+   {| function get (a: 'a t) (i: integer) : 'a |}
+# 283 "gospelstdlib.mli"
+                                                ]
+  (** [get a i] is the element number [i] of array [a]. *)
+
+  [@@@gospel
+# 286 "gospelstdlib.mli"
+   {| function make (n: integer) (x: 'a) : 'a t |}
+# 286 "gospelstdlib.mli"
+                                                 ]
+  (** [make n x] is an array of length [n], initialized with [x]. *)
+
+  [@@@gospel
+# 289 "gospelstdlib.mli"
+   {| function init (n: integer) (f: integer -> 'a) : 'a t |}
+# 289 "gospelstdlib.mli"
+                                                            ]
+  (** [init n f] is an array of length [n], with element number [i] initialized
+      to the result of [f i]. *)
+
+  [@@@gospel
+# 293 "gospelstdlib.mli"
+   {| function append (a b: 'a t) : 'a t |}
+# 293 "gospelstdlib.mli"
+                                          ]
+  (** [append v1 v2] returns an array containing the concatenation of [v1] and
+      [v2]. *)
+
+  [@@@gospel
+# 297 "gospelstdlib.mli"
+   {| function concat (a: 'a t list) : 'a t |}
+# 297 "gospelstdlib.mli"
+                                             ]
+  (** Same as {!append}, but concatenates a list of arrays. *)
+
+  [@@@gospel
+# 300 "gospelstdlib.mli"
+   {| function sub (a: 'a t) (i len: integer) : 'a t |}
+# 300 "gospelstdlib.mli"
+                                                      ]
+  (** [sub a pos len] is the array of length [len], containing the elements
+      number [pos] to [pos + len - 1] of array [a]. *)
+
+  [@@@gospel
+# 304 "gospelstdlib.mli"
+   {| function map (f: 'a -> 'b) (a: 'a t) : 'b t |}
+# 304 "gospelstdlib.mli"
+                                                   ]
+  (** [map f a] applies function [f] to all the elements of [a], and builds an
+      array with the results returned by [f] *)
+
+  [@@@gospel
+# 308 "gospelstdlib.mli"
+   {| function mapi (f: integer -> 'a -> 'b) (a: 'a t) : 'b t |}
+# 308 "gospelstdlib.mli"
+                                                               ]
+  (** Same as {!map}, but the function is applied to the index of the element as
+      first argument, and the element itself as second argument. *)
+
+  [@@@gospel
+# 312 "gospelstdlib.mli"
+   {| function fold_left (f: 'a -> 'b -> 'a) (init: 'a) (a: 'b t) : 'a |}
+# 312 "gospelstdlib.mli"
+                                                                        ]
+  (** [fold_left f init a] is [f (... (f (f init a\[0\]) a\[1\]) ...) a\[n-1\]],
+      where [n] is the length of [a]. *)
+
+  [@@@gospel
+# 316 "gospelstdlib.mli"
+   {| function fold_right (f: 'b -> 'a -> 'a) (a: 'b t) (init: 'a) : 'a |}
+# 316 "gospelstdlib.mli"
+                                                                         ]
+  (** [fold_right f a init] is
+      [f a\[0\] (f a\[1\] ( ... (f a\[n-1\] init) ...))], where [n] is the
+      length of [a]. *)
+
+  [@@@gospel
+# 321 "gospelstdlib.mli"
+   {| function map2 (f: 'a -> 'b -> 'c) (a: 'a t) (b: 'b t) : 'c t |}
+# 321 "gospelstdlib.mli"
+                                                                    ]
+  (** [map2 f a b] applies function [f] to all the elements of [a] and [b], and
+      builds an array with the results returned by [f]. *)
+
+  [@@@gospel
+# 325 "gospelstdlib.mli"
+   {| predicate for_all (f: 'a -> bool) (a: 'a t) |}
+# 325 "gospelstdlib.mli"
+                                                   ]
+  (** [for_all f a] holds iff all elements of [a] satisfy the predicate [f]. *)
+
+  [@@@gospel
+# 328 "gospelstdlib.mli"
+   {| predicate _exists (f: 'a -> bool) (a: 'a t) |}
+# 328 "gospelstdlib.mli"
+                                                   ]
+  (** [_exists f a] holds iff at least one element of [a] satisfies [f]. *)
+
+  [@@@gospel
+# 331 "gospelstdlib.mli"
+   {| predicate for_all2 (f: 'a -> 'b -> bool) (a: 'a t) (b: 'b t) |}
+# 331 "gospelstdlib.mli"
+                                                                    ]
+  (** Same as {!for_all}, but for a two-argument predicate. *)
+
+  [@@@gospel
+# 334 "gospelstdlib.mli"
+   {| predicate _exists2 (f: 'a -> 'b -> bool) (a: 'a t) (b: 'b t) |}
+# 334 "gospelstdlib.mli"
+                                                                    ]
+  (** Same as {!_exists}, but for a two-argument predicate. *)
+
+  [@@@gospel
+# 337 "gospelstdlib.mli"
+   {| predicate mem (x: 'a) (a: 'a t) |}
+# 337 "gospelstdlib.mli"
+                                       ]
+  (** [mem x a] holds iff [x] is equal to an element of [a] *)
+
+  [@@@gospel
+# 340 "gospelstdlib.mli"
+   {| function to_list (a: 'a t) : 'a list |}
+# 340 "gospelstdlib.mli"
+                                            ]
+  [@@@gospel
+# 341 "gospelstdlib.mli"
+   {| function of_list (l: 'a list) : 'a t |}
+# 341 "gospelstdlib.mli"
+                                            ]
+
+  [@@@gospel
+# 343 "gospelstdlib.mli"
+   {| function to_seq (a: 'a t) : 'a Seq.t |}[@@gospel
+# 344 "gospelstdlib.mli"
+   {| coercion |}]
+# 344 "gospelstdlib.mli"
+                ]
+  [@@@gospel
+# 345 "gospelstdlib.mli"
+   {| function of_seq (s: 'a Seq.t) : 'a t |}
+# 345 "gospelstdlib.mli"
+                                            ]
+
+  [@@@gospel
+# 347 "gospelstdlib.mli"
+   {| function to_bag (a: 'a t) : 'a bag |}
+# 347 "gospelstdlib.mli"
+                                          ]
+
+  [@@@gospel
+# 349 "gospelstdlib.mli"
+   {| predicate permut (a b: 'a array) |}
+# 349 "gospelstdlib.mli"
+                                        ]
+  (** [permut a b] is true iff [a] and [b] contain the same elements with the
+      same number of occurrences *)
+
+  [@@@gospel
+# 353 "gospelstdlib.mli"
+   {| predicate permut_sub (a b: 'a array) (lo hi: integer) |}
+# 353 "gospelstdlib.mli"
+                                                             ]
+  (** [permut_sub a b lo hi] is true iff the segment `a1.(lo..hi-1)` is a
+      permutation of the segment `a2.(lo..hi-1)` and values outside of the
+      interval are equal. *)
+end
+
+(** {1 Bags} *)
+
+module Bag : sig
+  [@@@gospel
+# 362 "gospelstdlib.mli"
+   {| type 'a t = 'a bag |}
+# 362 "gospelstdlib.mli"
+                          ]
+  (** An alias for ['a bag]. *)
+
+  [@@@gospel
+# 365 "gospelstdlib.mli"
+   {| function occurrences (x: 'a) (b: 'a t): integer |}
+# 365 "gospelstdlib.mli"
+                                                       ]
+  (** [occurrences x b] is the number of occurrences of [x] in [s]. *)
+
+  [@@@gospel
+# 368 "gospelstdlib.mli"
+   {| function empty : 'a t |}
+# 368 "gospelstdlib.mli"
+                             ]
+  (** [empty] is the empty bag. *)
+
+  [@@@gospel
+# 371 "gospelstdlib.mli"
+   {| predicate is_empty (b: 'a t) |}
+# 371 "gospelstdlib.mli"
+                                    ]
+  (** [is_empty b] is [b = empty]. *)
+
+  [@@@gospel
+# 374 "gospelstdlib.mli"
+   {| predicate mem (x: 'a) (b: 'a t) |}
+# 374 "gospelstdlib.mli"
+                                       ]
+  (** [mem x b] holds iff [b] contains [x] at least once. *)
+
+  [@@@gospel
+# 377 "gospelstdlib.mli"
+   {| function add (x: 'a) (b: 'a t) : 'a t |}
+# 377 "gospelstdlib.mli"
+                                             ]
+  (** [add x b] is [b] when an occurence of [x] was added. *)
+
+  [@@@gospel
+# 380 "gospelstdlib.mli"
+   {| function singleton (x: 'a) : 'a t |}
+# 380 "gospelstdlib.mli"
+                                         ]
+  (** [singleton x] is a bag containing one occurence of [x]. *)
+
+  [@@@gospel
+# 383 "gospelstdlib.mli"
+   {| function remove (x: 'a) (b: 'a t) : 'a t |}
+# 383 "gospelstdlib.mli"
+                                                ]
+  (** [remove x b] is [b] where an occurence of [x] was removed. *)
+
+  [@@@gospel
+# 386 "gospelstdlib.mli"
+   {| function union (b b': 'a t) : 'a t |}
+# 386 "gospelstdlib.mli"
+                                          ]
+  (** [union b b'] is a bag [br] where for all element [x],
+      [occurences x br = max
+      (occurences x b) (occurences x b')]. *)
+
+  [@@@gospel
+# 391 "gospelstdlib.mli"
+   {| function sum (b b': 'a t) : 'a t |}
+# 391 "gospelstdlib.mli"
+                                        ]
+  (** [sum b b'] is a bag [br] where for all element [x],
+      [occurences x br =
+      (occurences x b) + (occurences x b')]. *)
+
+  [@@@gospel
+# 396 "gospelstdlib.mli"
+   {| function inter (b b': 'a t) : 'a t |}
+# 396 "gospelstdlib.mli"
+                                          ]
+  (** [inter b b'] is a bag [br] where for all element [x],
+      [occurences x br =
+      min (occurences x b) (occurences x b')]. *)
+
+  [@@@gospel
+# 401 "gospelstdlib.mli"
+   {| predicate disjoint (b b': 'a t) |}
+# 401 "gospelstdlib.mli"
+                                       ]
+  (** [disjoint b b'] holds iff [b] and [b'] have no element in common. *)
+
+  [@@@gospel
+# 404 "gospelstdlib.mli"
+   {| function diff (b b': 'a t) : 'a t |}
+# 404 "gospelstdlib.mli"
+                                         ]
+  (** [diff b b'] is a bag [br] where for all element [x],
+      [occurences x br =
+      max 0 (occurences x b - occurences x b')]. *)
+
+  [@@@gospel
+# 409 "gospelstdlib.mli"
+   {| predicate subset (b b': 'a t) |}
+# 409 "gospelstdlib.mli"
+                                     ]
+  (** [subset b b'] holds iff for all element [x],
+      [occurences x b <= occurences x b']. *)
+
+  [@@@gospel
+# 413 "gospelstdlib.mli"
+   {| function choose (b: 'a t) : 'a |}
+# 413 "gospelstdlib.mli"
+                                      ]
+  (** [choose b] is an arbitrary element of [b]. *)
+
+  [@@@gospel
+# 416 "gospelstdlib.mli"
+   {| function choose_opt (b: 'a t) : 'a option |}
+# 416 "gospelstdlib.mli"
+                                                 ]
+  (** [choose_opt b] is an arbitrary element of [b] or [None] if [b] is empty. *)
+
+  [@@@gospel
+# 419 "gospelstdlib.mli"
+   {| function map (f: 'a -> 'b) (b: 'a t) : 'b t |}
+# 419 "gospelstdlib.mli"
+                                                   ]
+  (** [map f b] is a fresh bag which elements are [f x1 ... f xN], where
+      [x1 ... xN] are the elements of [b]. *)
+
+  [@@@gospel
+# 423 "gospelstdlib.mli"
+   {| function fold (f: 'a -> 'b -> 'b) (b: 'a t) (a: 'b) : 'b |}
+# 423 "gospelstdlib.mli"
+                                                                ]
+  (** [fold f b a] is [(f xN ... (f x2 (f x1 a))...)], where [x1 ... xN] are the
+      elements of [b]. *)
+
+  [@@@gospel
+# 427 "gospelstdlib.mli"
+   {| predicate for_all (f: 'a -> bool) (b: 'a t) |}
+# 427 "gospelstdlib.mli"
+                                                   ]
+  (** [for_all f b] holds iff [f x] is [true] for all elements in [b]. *)
+
+  [@@@gospel
+# 430 "gospelstdlib.mli"
+   {| predicate _exists (f: 'a -> bool) (b: 'a t) |}
+# 430 "gospelstdlib.mli"
+                                                   ]
+  (** [for_all f b] holds iff [f x] is [true] for at least one element in [b]. *)
+
+  [@@@gospel
+# 433 "gospelstdlib.mli"
+   {| function filter (f: 'a -> bool) (b: 'a t) : 'a t |}
+# 433 "gospelstdlib.mli"
+                                                        ]
+  (** [filter f b] is the bag of all elements in [b] that satisfy [f]. *)
+
+  [@@@gospel
+# 436 "gospelstdlib.mli"
+   {| function filter_map (f: 'a -> 'a option) (b: 'a t) : 'a t |}
+# 436 "gospelstdlib.mli"
+                                                                 ]
+  (** [filter_map f b] is the bag of all [v] such that [f x = Some v] for some
+      element [x] of [b]. *)
+
+  [@@@gospel
+# 440 "gospelstdlib.mli"
+   {| function partition (f: 'a -> bool) (b: 'a t) : ('a t * 'a t) |}
+# 440 "gospelstdlib.mli"
+                                                                    ]
+  (** [partition f b] is the pair of bags [(b1, b2)], where [b1] is the bag of
+      all the elements of [b] that satisfy [f], and [b2] is the bag of all the
+      elements of [b] that do not satisfy [f]. *)
+
+  [@@@gospel
+# 445 "gospelstdlib.mli"
+   {| function cardinal (b: 'a t) : integer |}
+# 445 "gospelstdlib.mli"
+                                             ]
+  (** [cardinal b] is the total number of elements in [b], all occurrences being
+      counted. *)
+
+  [@@@gospel
+# 449 "gospelstdlib.mli"
+   {| function to_list (b: 'a t) : 'a list |}
+# 449 "gospelstdlib.mli"
+                                            ]
+  [@@@gospel
+# 450 "gospelstdlib.mli"
+   {| function of_list (l: 'a list) : 'a t |}
+# 450 "gospelstdlib.mli"
+                                            ]
+
+  [@@@gospel
+# 452 "gospelstdlib.mli"
+   {| function to_seq (b: 'a t) : 'a Seq.t |}
+# 452 "gospelstdlib.mli"
+                                            ]
+  [@@@gospel
+# 453 "gospelstdlib.mli"
+   {| function of_seq (s: 'a Seq.t) : 'a t |}
+# 453 "gospelstdlib.mli"
+                                            ]
+end
+
+(** {1 Sets} *)
+
+[@@@gospel
+# 458 "gospelstdlib.mli"
+ {| function ({}) : 'a set |}
+# 458 "gospelstdlib.mli"
+                            ]
+(** [\{\}] is the empty set. *)
+
+module Set : sig
+  [@@@gospel
+# 462 "gospelstdlib.mli"
+   {| type 'a t = 'a set |}
+# 462 "gospelstdlib.mli"
+                          ]
+  (** An alias for ['a set]. *)
+
+  [@@@gospel
+# 465 "gospelstdlib.mli"
+   {| function compare (s s': 'a t) : integer |}
+# 465 "gospelstdlib.mli"
+                                               ]
+  (** A comparison function over sets. *)
+
+  [@@@gospel
+# 468 "gospelstdlib.mli"
+   {| function empty : 'a t |}
+# 468 "gospelstdlib.mli"
+                             ]
+  (** [empty] is [∅]. *)
+
+  [@@@gospel
+# 471 "gospelstdlib.mli"
+   {| predicate is_empty (s: 'a t) |}
+# 471 "gospelstdlib.mli"
+                                    ]
+  (** [is_empty s] is [s = ∅]. *)
+
+  [@@@gospel
+# 474 "gospelstdlib.mli"
+   {| predicate mem (x: 'a) (s: 'a t) |}
+# 474 "gospelstdlib.mli"
+                                       ]
+  (** [mem x s] is [x ∈ s]. *)
+
+  [@@@gospel
+# 477 "gospelstdlib.mli"
+   {| function add (x: 'a) (s: 'a t) : 'a t |}
+# 477 "gospelstdlib.mli"
+                                             ]
+  (** [add x s] is [s ∪ {x}]. *)
+
+  [@@@gospel
+# 480 "gospelstdlib.mli"
+   {| function singleton (x: 'a) : 'a t |}
+# 480 "gospelstdlib.mli"
+                                         ]
+  (** [singleton x] is [{x}]. *)
+
+  [@@@gospel
+# 483 "gospelstdlib.mli"
+   {| function remove (x: 'a) (s: 'a t) : 'a t |}
+# 483 "gospelstdlib.mli"
+                                                ]
+  (** [remove x s] is [s ∖ {x}]. *)
+
+  [@@@gospel
+# 486 "gospelstdlib.mli"
+   {| function union (s s': 'a t) : 'a t |}
+# 486 "gospelstdlib.mli"
+                                          ]
+  (** [union s s'] is [s ∪ s']. *)
+
+  [@@@gospel
+# 489 "gospelstdlib.mli"
+   {| function inter (s s': 'a t) : 'a t |}
+# 489 "gospelstdlib.mli"
+                                          ]
+  (** [inter s s'] is [s ∩ s']. *)
+
+  [@@@gospel
+# 492 "gospelstdlib.mli"
+   {| predicate disjoint (s s': 'a t) |}
+# 492 "gospelstdlib.mli"
+                                       ]
+  (** [disjoint s s'] is [s ∩ s' = ∅]. *)
+
+  [@@@gospel
+# 495 "gospelstdlib.mli"
+   {| function diff (s s': 'a t) : 'a t |}
+# 495 "gospelstdlib.mli"
+                                         ]
+  (** [diff s s'] is [s ∖ s']. *)
+
+  [@@@gospel
+# 498 "gospelstdlib.mli"
+   {| predicate subset (s s': 'a t) |}
+# 498 "gospelstdlib.mli"
+                                     ]
+  (** [subset s s'] is [s ⊂ s']. *)
+
+  [@@@gospel
+# 501 "gospelstdlib.mli"
+   {| function cardinal (s: 'a t) : integer |}
+# 501 "gospelstdlib.mli"
+                                             ]
+  (** [cardinal s] is the number of elements in [s]. *)
+
+  [@@@gospel
+# 504 "gospelstdlib.mli"
+   {| function choose (s: 'a t) : integer |}
+# 504 "gospelstdlib.mli"
+                                           ]
+  (** [choose s] is an arbitrary element of [s]. *)
+
+  [@@@gospel
+# 507 "gospelstdlib.mli"
+   {| function choose_opt: 'a t -> 'a option |}
+# 507 "gospelstdlib.mli"
+                                              ]
+  (** [choose_opt s] is an arbitrary element of [s] or [None] if [s] is empty. *)
+
+  [@@@gospel
+# 510 "gospelstdlib.mli"
+   {| function map (f: 'a -> 'b) (s: 'a t) : 'b t |}
+# 510 "gospelstdlib.mli"
+                                                   ]
+  (** [map f s] is a fresh set which elements are [f x1 ... f xN], where
+      [x1 ...
+      xN] are the elements of [s]. *)
+
+  [@@@gospel
+# 515 "gospelstdlib.mli"
+   {| function fold (f: 'a -> 'b -> 'b) (s: 'a t) (a: 'b) : 'b |}
+# 515 "gospelstdlib.mli"
+                                                                ]
+  (** [fold f s a] is [(f xN ... (f x2 (f x1 a))...)], where [x1 ... xN] are the
+      elements of [s]. *)
+
+  [@@@gospel
+# 519 "gospelstdlib.mli"
+   {| predicate for_all (f: 'a -> bool) (s: 'a t) |}
+# 519 "gospelstdlib.mli"
+                                                   ]
+  (** [for_all f s] holds iff [f x] is [true] for all elements in [s]. *)
+
+  [@@@gospel
+# 522 "gospelstdlib.mli"
+   {| predicate _exists (f: 'a -> bool) (s: 'a t) |}
+# 522 "gospelstdlib.mli"
+                                                   ]
+  (** [_exists f s] holds iff [f x] is [true] for at least one element in [s]. *)
+
+  [@@@gospel
+# 525 "gospelstdlib.mli"
+   {| function filter (f: 'a -> bool) (s: 'a t) : 'a t |}
+# 525 "gospelstdlib.mli"
+                                                        ]
+  (** [filter f s] is the set of all elements in [s] that satisfy [f]. *)
+
+  [@@@gospel
+# 528 "gospelstdlib.mli"
+   {| function filter_map (f: 'a -> 'a option) (s: 'a t) : 'a t |}
+# 528 "gospelstdlib.mli"
+                                                                 ]
+  (** [filter_map f s] is the set of all [v] such that [f x = Some v] for some
+      element [x] of [s]. *)
+
+  [@@@gospel
+# 532 "gospelstdlib.mli"
+   {| function partition (f: 'a -> bool) (s: 'a t) : ('a t * 'a t) |}
+# 532 "gospelstdlib.mli"
+                                                                    ]
+  (** [partition f s] is the pair of sets [(s1, s2)], where [s1] is the set of
+      all the elements of [s] that satisfy the predicate [f], and [s2] is the
+      set of all the elements of [s] that do not satisfy [f]. *)
+
+  [@@@gospel
+# 537 "gospelstdlib.mli"
+   {| function to_list (s: 'a t) : 'a list |}
+# 537 "gospelstdlib.mli"
+                                            ]
+  [@@@gospel
+# 538 "gospelstdlib.mli"
+   {| function of_list (l: 'a list) : 'a t |}
+# 538 "gospelstdlib.mli"
+                                            ]
+
+  [@@@gospel
+# 540 "gospelstdlib.mli"
+   {| function to_seq (s: 'a t) : 'a Seq.t |}
+# 540 "gospelstdlib.mli"
+                                            ]
+  [@@@gospel
+# 541 "gospelstdlib.mli"
+   {| function of_seq (s: 'a Seq.t) : 'a t |}
+# 541 "gospelstdlib.mli"
+                                            ]
+end
+
+[@@@gospel
+# 544 "gospelstdlib.mli"
+ {| function ( [->] ) (f: 'a -> 'b) (x:'a) (y: 'b) : 'a -> 'b |}
+# 544 "gospelstdlib.mli"
+                                                               ]
+
+module Map : sig
+  (* the type ('a, 'b) map is defined internally in GOSPEL and can be
+     written as 'a -> 'b *)
+end
+
+module Order : sig
+  [@@@gospel
+# 552 "gospelstdlib.mli"
+   {| predicate is_pre_order (cmp: 'a -> 'a -> int) =
+      (forall x. cmp x x = 0) /\
+      (forall x y. cmp x y <= 0 <-> cmp y x >= 0) /\
+      (forall x y z.
+         (cmp x y <= 0 -> cmp y z <= 0 -> cmp x z <= 0) /\
+         (cmp x y <= 0 -> cmp y z <  0 -> cmp x z <  0) /\
+         (cmp x y <  0 -> cmp y z <= 0 -> cmp x z <  0) /\
+         (cmp x y <  0 -> cmp y z <  0 -> cmp x z <  0)) |}
+# 559 "gospelstdlib.mli"
+                                                          ]
+end
+
+(** Other OCaml built-in stuff *)
+
+exception Not_found
+exception Invalid_argument of string
+exception Failure of string
+
+module Sys : sig
+  [@@@gospel
+# 569 "gospelstdlib.mli"
+   {| function word_size : integer |}
+# 569 "gospelstdlib.mli"
+                                    ]
+
+  [@@@gospel
+# 571 "gospelstdlib.mli"
+   {| function int_size : integer |}
+# 571 "gospelstdlib.mli"
+                                   ]
+
+  [@@@gospel
+# 573 "gospelstdlib.mli"
+   {| function big_endian : bool |}
+# 573 "gospelstdlib.mli"
+                                  ]
+
+  [@@@gospel
+# 575 "gospelstdlib.mli"
+   {| function max_string_length : integer |}
+# 575 "gospelstdlib.mli"
+                                            ]
+
+  [@@@gospel
+# 577 "gospelstdlib.mli"
+   {| function max_array_length : integer |}
+# 577 "gospelstdlib.mli"
+                                           ]
+end
+
+end of file that is lexed
+spec_txt in uattr2spec:  type 'a seq 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a seq 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a seq 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a bag 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a bag 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a bag 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a ref 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a ref 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a ref 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a set 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a set 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a set 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function succ (x: integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function pred (x: integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function (-_) (x: integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function (+) (x y: integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function (-) (x y: integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function ( * ) (x y: integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function (/) (x y: integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function mod (x y: integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function pow (x y: integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function abs (x:integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function min (x y : integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function max (x y : integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate (>) (x y: integer) 
+end spec_txt
+third: 
+end_third
+> 
+ inside ulexer spec_txt in uattr2spec:  predicate (>=) (x y: integer) 
+end spec_txt
+third: 
+end_third
+>= 
+ inside ulexer spec_txt in uattr2spec:  predicate (<) (x y: integer) 
+end spec_txt
+third: 
+end_third
+< 
+ inside ulexer spec_txt in uattr2spec:  predicate (<=) (x y: integer) 
+end spec_txt
+third: 
+end_third
+<= 
+ inside ulexer spec_txt in uattr2spec:  function logand (x y: integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function logor (x y: integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function logxor (x y: integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function lognot (x: integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function shift_left (x y: integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function shift_right (x y: integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function shift_right_trunc (x y: integer) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function integer_of_int (x: int) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  coercion 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function max_int : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function min_int : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function fst (p: 'a * 'b) : 'a 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function snd (p: 'a * 'b) : 'b 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function (!_) (r: 'a ref) : 'a 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function (++) (s s': 'a seq) : 'a seq 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function ([_]) (s: 'a seq) (i: integer): 'a 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function ([_.._]) (s: 'a seq) (i1: integer) (i2: integer): 'a seq 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function ([_..]) (s: 'a seq) (i: integer): 'a seq 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function ([.._]) (s: 'a seq) (i: integer): 'a seq 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a t = 'a seq 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a t = 'a seq 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a t = 'a seq 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function length (s: 'a t): integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function empty : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function singleton (x: 'a) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function init (n: integer) (f: integer -> 'a) : 'a seq 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function cons (x: 'a) (s: 'a t): 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function snoc (s: 'a seq) (x: 'a): 'a seq 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function hd (s: 'a t) : 'a 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function tl (s: 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function append (s s': 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate mem (s: 'a seq) (x: 'a) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function map (f: 'a -> 'b) (s: 'a t) : 'b t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function filter (f: 'a -> bool) (s: 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function filter_map (f: 'a -> 'b option) (s: 'a t) : 'b t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function get (s: 'a t) (i: integer) : 'a 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function set (s: 'a t) (i: integer) (x: 'a): 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function rev (s: 'a seq) : 'a seq 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function rec fold_left (f: 'a -> 'b -> 'a) (acc: 'a) (s: 'b seq) : 'a 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function rec fold_right (f: 'a -> 'b -> 'b) (s: 'a seq) (acc: 'b) : 'b 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a t = 'a list 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a t = 'a list 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a t = 'a list 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function length (l: 'a t) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function hd (l: 'a t) : 'a 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function tl (l: 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function nth (l: 'a t) (i: integer) : 'a 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function nth_opt (l: 'a t) (i: integer) : 'a option 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function rev (l: 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function init (n: integer) (f: integer -> 'a) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function map (f: 'a -> 'b) (l: 'a t) : 'b t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function mapi (f: integer -> 'a -> 'b) (l: 'a t) : 'b t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function fold_left (f: 'a -> 'b -> 'a) (init: 'a) (l: 'b t) : 'a 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function fold_right (f: 'b -> 'a -> 'a) (l: 'b t) (init: 'a) : 'a 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function map2 (f: 'a -> 'b -> 'c) (l: 'a t) (l': 'b t) : 'c t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate for_all (f: 'a -> bool) (l: 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate _exists (f: 'a -> bool) (l: 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate for_all2 (f: 'a -> 'b -> bool) (l: 'a t) (l': 'b t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate _exists2 (f: 'a -> 'b -> bool) (l: 'a t) (l': 'b t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate mem (x: 'a) (l: 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function to_seq (s: 'a t) : 'a Seq.t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  coercion 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function of_seq (s: 'a Seq.t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a t = 'a array 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a t = 'a array 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a t = 'a array 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function length (a: 'a t) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function get (a: 'a t) (i: integer) : 'a 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function make (n: integer) (x: 'a) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function init (n: integer) (f: integer -> 'a) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function append (a b: 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function concat (a: 'a t list) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function sub (a: 'a t) (i len: integer) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function map (f: 'a -> 'b) (a: 'a t) : 'b t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function mapi (f: integer -> 'a -> 'b) (a: 'a t) : 'b t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function fold_left (f: 'a -> 'b -> 'a) (init: 'a) (a: 'b t) : 'a 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function fold_right (f: 'b -> 'a -> 'a) (a: 'b t) (init: 'a) : 'a 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function map2 (f: 'a -> 'b -> 'c) (a: 'a t) (b: 'b t) : 'c t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate for_all (f: 'a -> bool) (a: 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate _exists (f: 'a -> bool) (a: 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate for_all2 (f: 'a -> 'b -> bool) (a: 'a t) (b: 'b t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate _exists2 (f: 'a -> 'b -> bool) (a: 'a t) (b: 'b t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate mem (x: 'a) (a: 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function to_list (a: 'a t) : 'a list 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function of_list (l: 'a list) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function to_seq (a: 'a t) : 'a Seq.t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  coercion 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function of_seq (s: 'a Seq.t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function to_bag (a: 'a t) : 'a bag 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate permut (a b: 'a array) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate permut_sub (a b: 'a array) (lo hi: integer) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a t = 'a bag 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a t = 'a bag 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a t = 'a bag 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function occurrences (x: 'a) (b: 'a t): integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function empty : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate is_empty (b: 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate mem (x: 'a) (b: 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function add (x: 'a) (b: 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function singleton (x: 'a) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function remove (x: 'a) (b: 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function union (b b': 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function sum (b b': 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function inter (b b': 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate disjoint (b b': 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function diff (b b': 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate subset (b b': 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function choose (b: 'a t) : 'a 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function choose_opt (b: 'a t) : 'a option 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function map (f: 'a -> 'b) (b: 'a t) : 'b t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function fold (f: 'a -> 'b -> 'b) (b: 'a t) (a: 'b) : 'b 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate for_all (f: 'a -> bool) (b: 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate _exists (f: 'a -> bool) (b: 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function filter (f: 'a -> bool) (b: 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function filter_map (f: 'a -> 'a option) (b: 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function partition (f: 'a -> bool) (b: 'a t) : ('a t * 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function cardinal (b: 'a t) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function to_list (b: 'a t) : 'a list 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function of_list (l: 'a list) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function to_seq (b: 'a t) : 'a Seq.t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function of_seq (s: 'a Seq.t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function ({}) : 'a set 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a t = 'a set 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a t = 'a set 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  type 'a t = 'a set 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function compare (s s': 'a t) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function empty : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate is_empty (s: 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate mem (x: 'a) (s: 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function add (x: 'a) (s: 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function singleton (x: 'a) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function remove (x: 'a) (s: 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function union (s s': 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function inter (s s': 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate disjoint (s s': 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function diff (s s': 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate subset (s s': 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function cardinal (s: 'a t) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function choose (s: 'a t) : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function choose_opt: 'a t -> 'a option 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function map (f: 'a -> 'b) (s: 'a t) : 'b t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function fold (f: 'a -> 'b -> 'b) (s: 'a t) (a: 'b) : 'b 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate for_all (f: 'a -> bool) (s: 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate _exists (f: 'a -> bool) (s: 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function filter (f: 'a -> bool) (s: 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function filter_map (f: 'a -> 'a option) (s: 'a t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function partition (f: 'a -> bool) (s: 'a t) : ('a t * 'a t) 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function to_list (s: 'a t) : 'a list 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function of_list (l: 'a list) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function to_seq (s: 'a t) : 'a Seq.t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function of_seq (s: 'a Seq.t) : 'a t 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function ( [->] ) (f: 'a -> 'b) (x:'a) (y: 'b) : 'a -> 'b 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  predicate is_pre_order (cmp: 'a -> 'a -> int) =
+      (forall x. cmp x x = 0) /\
+      (forall x y. cmp x y <= 0 <-> cmp y x >= 0) /\
+      (forall x y z.
+         (cmp x y <= 0 -> cmp y z <= 0 -> cmp x z <= 0) /\
+         (cmp x y <= 0 -> cmp y z <  0 -> cmp x z <  0) /\
+         (cmp x y <  0 -> cmp y z <= 0 -> cmp x z <  0) /\
+         (cmp x y <  0 -> cmp y z <  0 -> cmp x z <  0)) 
+end spec_txt
+third: 
+end_third
+37146
+ inside uparser <= 
+ inside ulexer 37181
+ inside uparser >= 
+ inside ulexer 37198
+ inside uparser <= 
+ inside ulexer 37246
+ inside uparser <= 
+ inside ulexer 37262
+ inside uparser <= 
+ inside ulexer 37278
+ inside uparser <= 
+ inside ulexer 37305
+ inside uparser < 
+ inside ulexer 37321
+ inside uparser < 
+ inside ulexer 37337
+ inside uparser < 
+ inside ulexer 37364
+ inside uparser <= 
+ inside ulexer 37380
+ inside uparser < 
+ inside ulexer 37396
+ inside uparser < 
+ inside ulexer 37423
+ inside uparser < 
+ inside ulexer 37439
+ inside uparser < 
+ inside ulexer 37455
+ inside uparser spec_txt in uattr2spec:  function word_size : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function int_size : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function big_endian : bool 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function max_string_length : integer 
+end spec_txt
+third: 
+end_third
+spec_txt in uattr2spec:  function max_array_length : integer 
+end spec_txt
+third: 
+end_third
+global pos is
+42
+start pos is
+102
+end pos is
+108
+ t = silly_create c
+requires c >= 5 
+requires c < 10
+requires c = 0
+
+global pos is
+42
+start pos is
+119
+end pos is
+125
+ t = silly_create c
+requires c >= 5 
+requires c < 10
+requires c = 0
+
+safe
+global pos is
+42
+start pos is
+135
+end pos is
+140
+ t = silly_create c
+requires c >= 5 
+requires c < 10
+requires c = 0
+
+safe

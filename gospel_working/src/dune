@@ -1,0 +1,21 @@
+
+(ocamllex
+ (modules pps ulexer))
+
+(menhir
+ (modules uparser)
+ (flags
+  (-v --explain)))
+
+(library
+ (public_name gospel)
+ (preprocess
+  (pps ppx_jane ppx_deriving.show))
+ (libraries core ocaml-compiler-libs.shadow fmt findlib ppxlib ppxlib.ast pp_loc)
+ (modules_without_implementation uast))
+
+(rule
+ (targets gospelstdlib.ml)
+ (deps stdlib/gospelstdlib.mli)
+ (action
+  (run stdlib/file_to_string.exe %{deps} %{targets})))
