@@ -55,8 +55,12 @@ let sexp_of_transtype t = match t with
 let transtype_of_sexp _ =
   Error (W.Unsupported "line 33 translated.ml", W.fake_loc)
 
-type type_ = {
-  name : string;
+(*need to mark whether it's poly or not in order to support
+polymorphism*)
+(*say 'a list is a list applied to a type 'a which is a type variable*)
+type type_data =
+  { name : string;
+  (*ty : Gospel.Ttypes.ty option; option for the gospel stdlib types*)
   loc : (Location.t [@sexp.opaque]) ;
   mutable_ : mutability;
   ghost : Gospel.Tast.ghost;
@@ -69,9 +73,14 @@ type type_ = {
   copy : ((expression, W.t) result [@sexp.opaque]);
 }[@@deriving sexp_of]
 
-let type_ ~name ~loc ~mutable_ ~ghost =
+type type_ =
+  | Tyvar of type_data
+  | Tyapp of type_data * (type_ list)
+
+let type_ ~name ~ty ~loc ~mutable_ ~ghost =
   {
     name;
+    ty;
     loc;
     mutable_;
     ghost;
@@ -85,7 +94,7 @@ let type_ ~name ~loc ~mutable_ ~ghost =
 type ocaml_var = {
   name : string;
   label : (arg_label [@sexp.opaque]); (*probably useful to know*)
-  type_ : Gospel.Ttypes.ty; (**)
+  type_ : type_; (**)
   modified : bool; (*stm cant test this*)
   consumed : bool; (*stm can't test this*)
 }

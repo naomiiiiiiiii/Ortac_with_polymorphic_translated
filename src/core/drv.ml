@@ -73,7 +73,9 @@ let stdlib_types =
   let loc = Ppxlib.Location.none in
   let ghost = Gospel.Tast.Nonghost in
   [
-    ([ "unit" ], type_ ~name:"unit" ~loc ~mutable_:Immutable ~ghost);
+    ([ "unit" ], type_ ~name:"unit" ~loc
+       ~ty:None (*if i make all of these none then what happens?*)
+       ~mutable_:Immutable ~ghost);
     ([ "string" ], type_ ~name:"string" ~loc ~mutable_:Immutable ~ghost);
     ([ "char" ], type_ ~name:"char" ~loc ~mutable_:Immutable ~ghost);
     ([ "float" ], type_ ~name:"float" ~loc ~mutable_:Immutable ~ghost);

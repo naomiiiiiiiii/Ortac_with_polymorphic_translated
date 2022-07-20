@@ -36,15 +36,23 @@ let term_printer ?(v = true) _text _global_loc (t : Tterm.term)  =
 (*go from a Ttypes.ty_node (gospel) to a type_ (translated) *)
 (*this will have to change when you keep track of model types in type_?
 or is that done by type_*)
+
+(*doesnt distinguish a type var from a type
+Tyvar alpha just goes to a type named "alpha"*)
 let type_of_ty ~driver (ty : Ttypes.ty) =
   match ty.ty_node with
   | Tyvar a ->(*if its jsut a type variable then you
                 aren't given any information about it?*)
       Translated.type_ ~name:a.tv_name.id_str ~loc:a.tv_name.id_loc
+        ~ty:ty
         ~mutable_:Translated.Unknown ~ghost:Tast.Nonghost
         (*no models or invariants*)
   | Tyapp (ts, _tvs) -> ((*base types like int are under here, applied to unit*)
       match Drv.get_type ts driver with
+      (*throws out the arguments if a polymorphic type is instantiated
+      Tyapp (list, [int]). if it didnt through out the arguments...
+        maybe best to just add the arguments/params in ty_ form 
+      *)
       (*driver has information about all the base types...
         dont have to keep retranslating 'int' every time.*)
       | None ->
@@ -55,13 +63,15 @@ let type_of_ty ~driver (ty : Ttypes.ty) =
 
 let vsname (vs : Symbols.vsymbol) = Fmt.str "%a" Tast.Ident.pp vs.vs_name
 
-let var_of_vs ~driver (vs : Symbols.vsymbol) : Translated.ocaml_var =
+let var_of_vs ~_driver (vs : Symbols.vsymbol) : Translated.ocaml_var =
   let name = vsname vs in
   let label = Nolabel in
   let type_ = type_of_ty ~driver vs.vs_ty in
+  (*not sure if i need a driver at all now that I'm taking this out?
+  honestly might be better to start from the tast*)
   { name; label; type_; modified = false; consumed = false }
 
-let var_of_arg ~driver arg : Translated.ocaml_var =
+let var_of_arg ~_driver arg : Translated.ocaml_var =
   let label, name =
     match arg with
     | Tast.Lunit -> (Nolabel, "()")
@@ -74,7 +84,8 @@ let var_of_arg ~driver arg : Translated.ocaml_var =
         let name = vsname vs in
         (Labelled name, name)
   in
-  let type_ = type_of_ty ~driver (Tast_helper.ty_of_lb_arg arg) in
+  let type_ = Tast_helper.ty_of_lb_arg arg
+    (* type_of_ty ~driver (Tast_helper.ty_of_lb_arg arg) *) in
   { name; label; type_; modified = false; consumed = false }
 
 (*type declaration to type_
@@ -115,8 +126,8 @@ let value ~driver ~ghost (vd : Tast.val_description) =
   let name = vd.vd_name.id_str in
   let loc = vd.vd_loc in
   let register_name = register_name () in
-  let arguments = List.map (var_of_arg ~driver) vd.vd_args in
-  let returns = List.map (var_of_arg ~driver) vd.vd_ret in
+  let arguments = List.map (var_of_arg ~_driver:driver) vd.vd_args in
+  let returns = List.map (var_of_arg ~_driver:driver) vd.vd_ret in
   let pure = false in
   let value =
     value ~name ~loc ~register_name ~arguments ~returns ~pure ~ghost
@@ -172,7 +183,7 @@ let function_of (kind : [ `Function | `Predicate ]) ~driver (f : Tast.function_)
   let name = gen_symbol ~prefix:("__logical_" ^ f.fun_ls.ls_name.id_str) () in
   let loc = f.fun_loc in
   let rec_ = f.fun_rec in
-  let arguments = List.map (var_of_vs ~driver) f.fun_params in
+  let arguments = List.map (var_of_vs ~_driver:driver) f.fun_params in
   let definition =
     Option.map (T.function_definition ~driver f.fun_ls name) f.fun_def
   in
