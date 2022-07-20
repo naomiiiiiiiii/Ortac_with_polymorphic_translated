@@ -23,7 +23,7 @@ let with_invariants ~driver ~term_printer (self, invariants) (type_ : Ts.type_) 
   { type_ with invariants = [] }
 
 (*do i need to check for dups amongst models? yes, gospel does not check this*)
-let with_models (fields : (Gospel.Symbols.lsymbol * bool) list)
+let with_models ~driver (fields : (Gospel.Symbols.lsymbol * bool) list)
     (type_: Ts.type_) =
   let has_dup l = let sorted = List.sort String.compare l in
     List.fold_right (fun ele (dup, prev) ->
@@ -35,7 +35,9 @@ let with_models (fields : (Gospel.Symbols.lsymbol * bool) list)
   let check_dups = List.map (fun (l, _) -> l.Gospel.Symbols.ls_name.id_str) fields |> has_dup  in
   (match check_dups with None -> () | Some dup -> raise (Failure ("duplicate model: " ^ dup)));
   let models = List.map (fun (l, _) -> (l.Gospel.Symbols.ls_name.id_str,
-                                        Option.get l.Gospel.Symbols.ls_value)) fields
+                                        Option.get l.Gospel.Symbols.ls_value
+                                       |> Translate.type_of_ty ~driver 
+                                       )) fields
       in
       {type_ with models}
 
@@ -57,7 +59,7 @@ let type_ ~(driver : Drv.t) ~ghost (td : Tast.type_declaration) : Drv.t =
     in
     let (type_ : Ts.type_) =
       type_
-      |> with_models spec.ty_fields
+      |> with_models ~driver spec.ty_fields
       (*add back in the names of the models but nothing else*)
       |> with_invariants ~driver ~term_printer spec.ty_invariants
       (*need to support invariants later, start here*)

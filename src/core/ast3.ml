@@ -45,7 +45,7 @@ definitely thrown out by the time you get to drv?
 field name * field type
   really does not support polymorphism, need a much better type for types than strings
 *)
-type state = (string * Gospel.Ttypes.ty) list
+type state = (string * typ) list
 
 (*type sut = NOT NECESSARY, just do module_name.t *)
 

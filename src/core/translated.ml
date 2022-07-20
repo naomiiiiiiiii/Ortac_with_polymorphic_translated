@@ -71,7 +71,7 @@ type type_ =
   loc : (Location.t [@sexp.opaque]) ;
   mutable_ : mutability;
   ghost : Gospel.Tast.ghost;
-  models : (string * Gospel.Ttypes.ty) list;
+  models : (string * type_) list;
   (*name and __ something else. need to change this to include type.
     support this later. *)
   invariants : invariant list;

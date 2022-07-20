@@ -64,15 +64,17 @@ let cmd items : Ast3.cmd =
 first check -- do they have this anywhere? for the model?
   in the tast? no
   in the uast? *)
+   (*
 let state items : Ast3.state  =
   match List.find_opt (fun s -> match s with
       | Type t when (String.equal t.name "t") -> true 
       | _ -> false) items with
-  Some (Type t) -> List.map (fun ty -> (name, "fake type")) fake_models
+  Some (Type t) -> 
+
   | _ -> raise (Failure ("type t not declared; could not determine sut"))
 
 
 let arb_cmd =
   S.map (fun args ->
       List.map args (fun arg -> mk_qcheck arg.arg_type))
-
+*)
