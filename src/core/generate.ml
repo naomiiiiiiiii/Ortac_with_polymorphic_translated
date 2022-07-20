@@ -186,7 +186,7 @@ let axiom (a : Translated.axiom) =
 
 
 let structure runtime (driver: Drv.t) : structure =
-  (* Drv.print_t driver ; *)
+   Drv.print_t driver ;
   (pmod_ident (lident (Drv.module_name driver)) |> include_infos |> pstr_include)
   :: pstr_module
        (module_binding

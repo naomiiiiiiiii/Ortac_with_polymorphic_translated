@@ -66,6 +66,7 @@ let var_of_arg ~driver arg : Translated.ocaml_var =
     match arg with
     | Tast.Lunit -> (Nolabel, "()")
     | Tast.Lnone vs | Tast.Lghost vs -> (Nolabel, vsname vs)
+    (*throws out the type of the arguments stored in the vsymbol*)
     | Tast.Loptional vs ->
         let name = vsname vs in
         (Optional name, name)

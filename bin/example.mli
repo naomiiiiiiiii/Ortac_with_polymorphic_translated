@@ -1,16 +1,5 @@
-type t
-(*@
-model same : int
-model same : bool list
-*)
-
-
-val silly_create : int -> int
+val silly_create : int list -> bool list
 (*@ t = silly_create c
-requires c >= 5
+requires List.length c >= 5
 *)
 
-val silly_create : int -> int
-(*@ t = silly_create c
-requires c < 5
-*)

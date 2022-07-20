@@ -85,7 +85,7 @@ let type_ ~name ~loc ~mutable_ ~ghost =
 type ocaml_var = {
   name : string;
   label : (arg_label [@sexp.opaque]); (*probably useful to know*)
-  type_ : type_; (**)
+  type_ : Gospel.Ttypes.ty; (**)
   modified : bool; (*stm cant test this*)
   consumed : bool; (*stm can't test this*)
 }
@@ -105,7 +105,12 @@ type xpost = {
 type value = {
   name : string;
   loc : (Location.t [@sexp.opaque]);
-  arguments : ocaml_var list; (*name and type of the args, only need the types*)
+  arguments : ocaml_var list;
+  (*name and type of the args, only need the types
+    but the types are represented as only strings and you need the
+    TYPE type (ty)
+    for example the string for 'bool list' is just list
+  *)
   returns : ocaml_var list; (*name and type of the returns*)
   register_name : string; (*dont need this, it's to do with the error wrappers*)
   ghost : Gospel.Tast.ghost;
