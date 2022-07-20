@@ -190,7 +190,7 @@ type function_ = {
 [@@deriving sexp_of]
 
 type structure_item =
-  | Type of type_ (*this one*)
+  | Type of type_ (*literally never look at these except to get the fields for the state*)
   | Value of value (*this one (real functions are put in here)*)
  | Constant of (constant [@sexp.opaque ]) (*nope*)
   | Function of function_ (*not sure what goes in here*)

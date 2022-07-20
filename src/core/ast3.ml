@@ -21,6 +21,7 @@ type typ =
   | Int
   | String
   | Bool
+  | Unit
   | List of typ 
 
 
