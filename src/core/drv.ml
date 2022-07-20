@@ -1,14 +1,10 @@
 open Sexplib.Std
 open Gospel.Tmodule
-open Translated
 
 module L = Map.Make (Gospel.Symbols.LS)
 module T = Map.Make (Gospel.Ttypes.Ts)
 
 
-module Drv (M: MODEL) = struct
-  
-module Translated = Sig_item (M)
 
 type sil = Translated.structure_item list
 [@@deriving sexp_of]
@@ -164,4 +160,3 @@ let map_translation ~f t = List.rev_map f t.translations
 let iter_translation ~f t = List.iter f (List.rev t.translations)
 let module_name t = t.module_name
 
-end 

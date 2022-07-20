@@ -1,8 +1,4 @@
-module Mutability (M : Translated.MODEL): sig
-  open Translated
-  open Drv 
-  module Translated : (module type of (Sig_item (M)))
-  module  Drv : (module type of  (Drv (M)))
+module Mutability : sig
   val max : Translated.mutability -> Translated.mutability -> Translated.mutability
   val ty : driver:Drv.t -> Gospel.Ttypes.ty -> Translated.mutability
 

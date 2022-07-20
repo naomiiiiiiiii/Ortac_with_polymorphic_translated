@@ -1,7 +1,7 @@
 type t
 (*@
-model oooo : int
-model eeee : bool list
+model same : int
+model same : bool list
 *)
 
 

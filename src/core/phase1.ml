@@ -9,7 +9,8 @@ open Gospel
 module T = Translation
 module Ident = Identifier.Ident
 module F = Failure
-  module Ts = Drv_stm.Translated_stm
+  module Ts = Translated
+
 
 
 let term_printer  (t : Tterm.term)  =
@@ -21,8 +22,24 @@ let with_invariants ~driver ~term_printer (self, invariants) (type_ : Ts.type_) 
     let _ = (silly driver term_printer self) invariants in
   { type_ with invariants = [] }
 
+(*do i need to check for dups amongst models? yes, gospel does not check this*)
+let with_models (fields : (Gospel.Symbols.lsymbol * bool) list)
+    (type_: Ts.type_) =
+  let has_dup l = let sorted = List.sort String.compare l in
+    List.fold_right (fun ele (dup, prev) ->
+        ((match prev with
+           None -> dup 
+        | Some prev -> if (String.equal ele prev) then Some ele else dup ), Some ele)) sorted (None, None)
+  |> fst
+  in
+  let check_dups = List.map (fun (l, _) -> l.Gospel.Symbols.ls_name.id_str) fields |> has_dup  in
+  (match check_dups with None -> () | Some dup -> raise (Failure ("duplicate model: " ^ dup)));
+  let models = List.map (fun (l, _) -> (l.Gospel.Symbols.ls_name.id_str,
+                                        Option.get l.Gospel.Symbols.ls_value)) fields
+      in
+      {type_ with models}
 
-let type_ ~(driver : Drv_stm.t) ~ghost (td : Tast.type_declaration) : Drv_stm.t =
+let type_ ~(driver : Drv.t) ~ghost (td : Tast.type_declaration) : Drv.t =
   let name = td.td_ts.ts_ident.id_str in
   let loc = td.td_loc in
   let mutable_ = Mutability.type_declaration ~driver td in
@@ -35,9 +52,12 @@ let type_ ~(driver : Drv_stm.t) ~ghost (td : Tast.type_declaration) : Drv_stm.t 
     let mutable_ = Mutability.(max (type_.Ts.mutable_) (type_spec ~driver spec)) in
     (*mutability is the maximum of the mutability gotten from the driver and the mutability
       in the spec*)
-    let models = type_.Ts.models in
+    let models = type_.Ts.models (*this is wrong, need to convert models here,
+                                 start here*)
+    in
     let (type_ : Ts.type_) =
       type_
+      |> with_models spec.ty_fields
       (*add back in the names of the models but nothing else*)
       |> with_invariants ~driver ~term_printer spec.ty_invariants
       (*need to support invariants later, start here*)
@@ -46,7 +66,7 @@ let type_ ~(driver : Drv_stm.t) ~ghost (td : Tast.type_declaration) : Drv_stm.t 
   in
   let type_ = Option.fold ~none:type_ ~some:(process ~type_) td.td_spec in
   let type_item : Ts.structure_item = Ts.Type type_ in
-   driver |> Drv_stm.add_translation type_item |> Drv_stm.add_type td.td_ts type_
+   driver |> Drv.add_translation type_item |> Drv.add_type td.td_ts type_
 (*type declarations get added to both translation and type lists*)
 
 let types ~driver ~ghost =
@@ -156,7 +176,7 @@ let value ~driver ~ghost (vd : Tast.val_description) =
   Drv.add_translation value_item driver
 
 (*starts with empty driver (from ortac_core.signature)*)
-let signature ~driver s : Drv_stm.t =
+let signature ~driver s : Drv.t =
   (* Printf.printf "\ntast is:\n%s%!" (s |> Tast.sexp_of_signature |> string_of_sexp
                                      ); *)
   List.fold_left

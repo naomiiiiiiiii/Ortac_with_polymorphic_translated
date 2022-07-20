@@ -67,7 +67,7 @@ type val_description = {
 type type_spec = {
   ty_ephemeral : bool;  (** Ephemeral *)
   ty_fields : (lsymbol * bool) list;
-  (** Models (field symbol  * mutable)
+ (* Models (field symbol  * mutable)
 the lsymbol has in it
       {name : string
       ls_args: the type of which it is a field? always a singleton list?

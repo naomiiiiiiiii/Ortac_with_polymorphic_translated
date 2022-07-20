@@ -9,6 +9,11 @@ module T = Translation
 
 let register_name = gen_symbol ~prefix:"__error"
 
+
+let with_models ~_driver _whatever (type_ : Translated.type_) =
+  let models = [] in
+  {type_ with models}
+
 (* the correct string is in text but these indices are wrong*)
 let term_printer ?(v = true) _text _global_loc (t : Tterm.term)  =
  (* if v then (print_endline("global pos is");
@@ -89,7 +94,7 @@ let type_ ~driver ~ghost (td : Tast.type_declaration) =
       in the spec*)
     let type_ =
       type_
-      |> T.with_models ~driver spec.ty_fields
+      |> with_models ~_driver:driver spec.ty_fields
       (*add back in the names of the models but nothing else*)
       |> T.with_invariants ~driver ~term_printer spec.ty_invariants
       (*need to support invariants later, start here*)

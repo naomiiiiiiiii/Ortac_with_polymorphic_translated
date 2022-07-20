@@ -2,14 +2,6 @@ module W = Warnings
 open Ppxlib
 open Sexplib.Std
 
-module type MODEL = sig
-
-  type model_type[@@deriving sexp_of]
-
-end 
-
-
-module Sig_item (M: MODEL) = struct 
   type mutability =
     | Unknown
     | Immutable
@@ -68,7 +60,7 @@ type type_ = {
   loc : (Location.t [@sexp.opaque]) ;
   mutable_ : mutability;
   ghost : Gospel.Tast.ghost;
-  models : M.model_type list;
+  models : (string * Gospel.Ttypes.ty) list;
   (*name and __ something else. need to change this to include type.
     support this later. *)
   invariants : invariant list;
@@ -187,14 +179,5 @@ type structure_item =
   | Axiom of axiom (*nope*)
       [@@deriving sexp_of]
 
-end
 
-
-module Translated = Sig_item (struct
-   type  model_type = string * bool [@@deriving sexp]
-  end)
-
-module Translated_stm = Sig_item (struct
-    type model_type = (string * Gospel.Ttypes.ty) list [@@deriving sexp]
-  end)
 

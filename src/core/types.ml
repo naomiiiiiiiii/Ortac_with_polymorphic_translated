@@ -1,10 +1,6 @@
 open Gospel
 
-module Mutability (M : Translated.MODEL) = struct
-open Translated
-open Drv 
-module Translated = Sig_item (M)
-module Drv = Drv (M)
+module Mutability = struct
   let max m n =
     let open Translated in
     match (m, n) with
