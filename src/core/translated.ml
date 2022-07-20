@@ -55,12 +55,19 @@ let sexp_of_transtype t = match t with
 let transtype_of_sexp _ =
   Error (W.Unsupported "line 33 translated.ml", W.fake_loc)
 
-(*need to mark whether it's poly or not in order to support
-polymorphism*)
+(*need to mark whether it's a variable or not to support polymorphism
+can't confuse the variable alpha with a type named alpha which is
+what happens currently in translation*)
 (*say 'a list is a list applied to a type 'a which is a type variable*)
-type type_data =
+
+
+(*type 'a t = 'a list
+maybe in making the driver I remove all polymorphic
+variables and replace them with int*)
+type type_ =
   { name : string;
   (*ty : Gospel.Ttypes.ty option; option for the gospel stdlib types*)
+    args : type_ list ;
   loc : (Location.t [@sexp.opaque]) ;
   mutable_ : mutability;
   ghost : Gospel.Tast.ghost;
@@ -73,14 +80,12 @@ type type_data =
   copy : ((expression, W.t) result [@sexp.opaque]);
 }[@@deriving sexp_of]
 
-type type_ =
-  | Tyvar of type_data
-  | Tyapp of type_data * (type_ list)
 
-let type_ ~name ~ty ~loc ~mutable_ ~ghost =
-  {
+(*type t = int list *)
+let type_ ~name ~loc ~mutable_ ~ghost =
+ {
     name;
-    ty;
+    args = [];
     loc;
     mutable_;
     ghost;

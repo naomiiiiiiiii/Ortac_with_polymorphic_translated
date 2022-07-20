@@ -39,15 +39,16 @@ or is that done by type_*)
 
 (*doesnt distinguish a type var from a type
 Tyvar alpha just goes to a type named "alpha"*)
-let type_of_ty ~driver (ty : Ttypes.ty) =
+let rec type_of_ty ~driver (ty : Ttypes.ty) =
   match ty.ty_node with
-  | Tyvar a ->(*if its jsut a type variable then you
+  | Tyvar _a ->(*if its jsut a type variable then you
                 aren't given any information about it?*)
-      Translated.type_ ~name:a.tv_name.id_str ~loc:a.tv_name.id_loc
-        ~ty:ty
+     (* Translated.type_ ~name:a.tv_name.id_str ~loc:a.tv_name.id_loc
         ~mutable_:Translated.Unknown ~ghost:Tast.Nonghost
-        (*no models or invariants*)
-  | Tyapp (ts, _tvs) -> ((*base types like int are under here, applied to unit*)
+        no models or invariants*)
+    raise (Failure "polymorphism not supported yet")
+  | Tyapp (ts, tvs) -> ((*base types like int are under here, applied to unit*)
+      let args = List.map (type_of_ty ~driver) tvs in
       match Drv.get_type ts driver with
       (*throws out the arguments if a polymorphic type is instantiated
       Tyapp (list, [int]). if it didnt through out the arguments...
@@ -55,15 +56,18 @@ let type_of_ty ~driver (ty : Ttypes.ty) =
       *)
       (*driver has information about all the base types...
         dont have to keep retranslating 'int' every time.*)
+      (*since I dont need this maybe I don't need the driver at all*)
       | None ->
           let mutable_ = Mutability.ty ~driver ty in
-          Translated.type_ ~name:ts.ts_ident.id_str ~loc:ts.ts_ident.id_loc
-            ~mutable_ ~ghost:Tast.Nonghost
+          let (argless: Translated.type_) =
+            Translated.type_ ~name:ts.ts_ident.id_str ~loc:ts.ts_ident.id_loc
+            ~mutable_ ~ghost:Tast.Nonghost in
+           {argless with args} 
       | Some type_ -> type_)
 
 let vsname (vs : Symbols.vsymbol) = Fmt.str "%a" Tast.Ident.pp vs.vs_name
 
-let var_of_vs ~_driver (vs : Symbols.vsymbol) : Translated.ocaml_var =
+let var_of_vs ~driver (vs : Symbols.vsymbol) : Translated.ocaml_var =
   let name = vsname vs in
   let label = Nolabel in
   let type_ = type_of_ty ~driver vs.vs_ty in
@@ -71,7 +75,7 @@ let var_of_vs ~_driver (vs : Symbols.vsymbol) : Translated.ocaml_var =
   honestly might be better to start from the tast*)
   { name; label; type_; modified = false; consumed = false }
 
-let var_of_arg ~_driver arg : Translated.ocaml_var =
+let var_of_arg ~driver arg : Translated.ocaml_var =
   let label, name =
     match arg with
     | Tast.Lunit -> (Nolabel, "()")
@@ -84,13 +88,15 @@ let var_of_arg ~_driver arg : Translated.ocaml_var =
         let name = vsname vs in
         (Labelled name, name)
   in
-  let type_ = Tast_helper.ty_of_lb_arg arg
-    (* type_of_ty ~driver (Tast_helper.ty_of_lb_arg arg) *) in
+  let type_ = type_of_ty ~driver (Tast_helper.ty_of_lb_arg arg) in
   { name; label; type_; modified = false; consumed = false }
 
 (*type declaration to type_
   this will have to change when you keep track of model types in type_*)
 (*throws out the params, constructors, kind, args, alias *)
+
+(*ASSUMPTION: all type declarations are abstract. therefore no args.
+if there are params? doesn't matter. you literally dont care about type declarations. *)
 let type_ ~driver ~ghost (td : Tast.type_declaration) =
   let name = td.td_ts.ts_ident.id_str in
   let loc = td.td_loc in
@@ -126,8 +132,8 @@ let value ~driver ~ghost (vd : Tast.val_description) =
   let name = vd.vd_name.id_str in
   let loc = vd.vd_loc in
   let register_name = register_name () in
-  let arguments = List.map (var_of_arg ~_driver:driver) vd.vd_args in
-  let returns = List.map (var_of_arg ~_driver:driver) vd.vd_ret in
+  let arguments = List.map (var_of_arg ~driver) vd.vd_args in
+  let returns = List.map (var_of_arg ~driver) vd.vd_ret in
   let pure = false in
   let value =
     value ~name ~loc ~register_name ~arguments ~returns ~pure ~ghost
@@ -183,7 +189,7 @@ let function_of (kind : [ `Function | `Predicate ]) ~driver (f : Tast.function_)
   let name = gen_symbol ~prefix:("__logical_" ^ f.fun_ls.ls_name.id_str) () in
   let loc = f.fun_loc in
   let rec_ = f.fun_rec in
-  let arguments = List.map (var_of_vs ~_driver:driver) f.fun_params in
+  let arguments = List.map (var_of_vs ~driver) f.fun_params in
   let definition =
     Option.map (T.function_definition ~driver f.fun_ls name) f.fun_def
   in
