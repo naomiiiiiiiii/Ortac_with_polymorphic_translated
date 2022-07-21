@@ -2,7 +2,7 @@ module W = Warnings
 module S = Map.Make (String)
 
 open Ppxlib
-open Sexplib.Std
+(*open Sexplib.Std *)
 
 
 (*the terms in DVT already have ortac stuff added to them. what you really want is the terms from the original spec which are
@@ -17,19 +17,22 @@ from there turn into this.
 *)
 
 (*all the types that are supported for state fields *)
+
+(*need to change this to be the gospel ints*)
 type typ =
-  | Int
+  | Integer
   | String
   | Bool
   | Unit
   | List of typ 
 
-
+type term = Translated.term
+(*
 type term = {
   txt : string;
   translation : ((expression, W.t) result [@sexp.opaque]);
 }
-[@@deriving sexp_of]
+[@@deriving sexp_of] *)
 
 type arg = {arg_name : string; arg_label : arg_label; arg_type: typ}
 
@@ -49,7 +52,7 @@ type state = (string * typ) list
 
 (*type sut = NOT NECESSARY, just do module_name.t *)
 
-type arb_cmd = (string list) S.t
+type arb_cmd = (expression list) S.t
 (*pair up cmd constructor with Qcheck generators for args.
 if arg list is empty then do Gen.return
 *)
@@ -58,9 +61,11 @@ if arg list is empty then do Gen.return
 fields in the state are set*)
 (*assume for now <5 args or whatever the highest map is *)
 
-type init_state = expression list
+type init_state = (string * expression) list
   (* <- just a tuple of value. get these values from the ensures of create in gospel which in the drv.t is a term list. you have to go into the term to find the state_element_n = __expression__.
      ensures condition.*)
+
+(*ensures fst = 5*)
 
 
 

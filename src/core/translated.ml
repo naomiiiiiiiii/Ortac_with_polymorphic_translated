@@ -136,10 +136,12 @@ type value = {
     and also some ppx expressions which already have ortac stuff inserted
     by translate.ml
     *) 
-  postconditions : (term list );
+  postconditions : (term list);
   xpostconditions : xpost list; (*cases are in here*)
 }
 [@@deriving sexp_of]
+
+(*the string * *)
 
 let value ~name ~loc ~arguments ~returns ~register_name ~ghost ~pure =
   {

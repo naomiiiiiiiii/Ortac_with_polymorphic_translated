@@ -11,6 +11,37 @@ module Ident = Identifier.Ident
 module F = Failure
   module Ts = Translated
 
+(*need this so that you can go inside the terms when getting the init state
+out of the post conditions
+only adds ortac frills to constants?. this is not enough becaues the
+  offending ortac frill (integer_of_int) is already there in the tast
+let term_simple ~driver (t: Tterm.term) : expression = 
+  match t.t_node with
+  Tvar *)
+
+
+(*converts from a TAST term back to a ppx expression.
+  some ortac specific stuff which i am taking out*)
+let unsafe_term ~driver (t : Tterm.term) : expression =
+  let unsupported m = raise (W.Error (W.Unsupported m, loc)) in
+  match t.t_node with
+    Tquant (Tterm.(Tforall | Texists),  _,  _ ) -> unsupported "ill formed quantification"
+  | _ -> Translation.unsafe_term ~driver:driver t
+
+
+let bool_term ~driver (_fail : string) t =
+  try Ok (unsafe_term ~driver t) with
+  W.Error t -> Error t 
+ (*  try
+    Ok
+      [%expr
+        try [%e unsafe_term ~driver t] (*try and make this expression*)
+        with e -> (*if it raises an exception
+                  *)
+          raise (Failure [%e estring fail])] (*estring makes the string into an expression
+                                               just like evar makes the string into a variable*)
+     with W.Error t -> Error t *)
+
 
 
 let term_printer  (t : Tterm.term)  =
@@ -74,25 +105,6 @@ let type_ ~(driver : Drv.t) ~ghost (td : Tast.type_declaration) : Drv.t =
 let types ~driver ~ghost =
   List.fold_left (fun driver -> type_ ~driver ~ghost) driver
 
-(*converts from a TAST term back to a ppx expression.
-some ortac specific stuff which i am taking out*)
-let unsafe_term ~driver (t : Tterm.term) : expression =
-  let unsupported m = raise (W.Error (W.Unsupported m, loc)) in
-  match t.t_node with
-   Tquant (Tterm.(Tforall | Texists),  _,  _ ) -> unsupported "ill formed quantification"
-  | _ -> Translation.unsafe_term ~driver:driver t
-
-
-let bool_term ~driver (fail : string) t =
-  try
-    Ok
-      [%expr
-        try [%e unsafe_term ~driver t] (*try and make this expression*)
-        with e -> (*if it raises an exception
-                    *)
-          raise (Failure [%e estring fail])] (*estring makes the string into an expression
-                                             just like evar makes the string into a variable*)
-     with W.Error t -> Error t 
  
 let with_checks ~driver (checks: Tterm.term list) (value : Translated.value): Translated.value =
   let checks =
@@ -121,7 +133,7 @@ let with_pre ~driver ~term_printer pres (value : Translated.value) =
   let preconditions = List.map (fun t ->
       let txt = term_printer t in
       let loc = t.Tterm.t_loc in
-      let translation = bool_term ~driver "pre or post" t in 
+      let translation = bool_term ~driver "pre " t in 
       ({ txt; loc; translation } : Translated.term)) pres
   in
   { value with preconditions }
@@ -130,7 +142,7 @@ let with_post ~driver ~term_printer pres (value : Translated.value) =
   let postconditions = List.map (fun t ->
       let txt = term_printer t in
       let loc = t.Tterm.t_loc in
-      let translation = bool_term ~driver "pre or post" t in 
+      let translation = bool_term ~driver "post" t in 
       ({ txt; loc; translation } : Translated.term)) pres
   in
   { value with postconditions }
