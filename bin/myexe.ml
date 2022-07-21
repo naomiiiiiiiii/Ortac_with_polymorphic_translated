@@ -1,14 +1,19 @@
 open Ortac_core
 
 
+module S = Map.Make (String)
+
+let map_of_list l = List.fold_right (fun (k, v) acc -> S.add k v acc) l S.empty 
+
 let signature ~_runtime ~module_name namespace s =
   let driver = Drv.init module_name namespace in
   let (translated: Drv.t) = Phase1.signature ~driver s in
 let translations = translated.Drv.translations in
-  let out =  Phase2.init_state translations [("field1", Ast3.List Ast3.Integer);
-                                          ("field2", Ast3.String)
-                                         ] in
-   List.map (fun (name, exp) -> Printf.printf "field name: %s\nfield exp: %s\n%!"
+  let out =  Phase2.init_state translations
+      (map_of_list [("field1", Ast3.List Ast3.Integer);
+                                          ("field2", Ast3.String)])
+                                          in
+   S.mapi (fun name exp -> Printf.printf "field name: %s\nfield exp: %s\n%!"
                 name (Ppxlib_ast.Pprintast.string_of_expression exp)) out
 
 let test path output =

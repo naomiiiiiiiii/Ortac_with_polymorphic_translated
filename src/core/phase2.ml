@@ -5,6 +5,9 @@ open Ast3
 
 module S = Map.Make (String)
 
+let value v = match v with Value v -> v | _ -> raise (Failure "not value")
+
+
 let unsupported_type s = raise (Failure ("unsupported type: " ^ s ))
 
 let rec typ_of_type_ (ty: type_)  =
@@ -55,12 +58,13 @@ print a drv example with a function that takes a bool list as argument.
 if it does throw this out then you need to add params and argument fields to the type_ *)
 
 let cmd (items: Translated.structure_item list) : Ast3.cmd =
- List.fold_right (fun s acc -> match s with
+ List.fold_right (fun item acc -> match item with
+      (*need to require here that the first argument is t*)
       | Value v when (v.arguments <> []) && (v.name <> "init_sut") ->
          (match (safe_add v.name (List.map (fun (arg: ocaml_var) ->
             mk_arg arg.name arg.label arg.type_)
                 v.arguments) acc) with
-         `Ok out -> out
+         |`Ok out -> out
          | `Duplicate key -> raise (Failure ("function declared twice: " ^ key)))
       | _ -> acc) items S.empty
 
@@ -68,8 +72,11 @@ let state items : Ast3.state  =
   match List.find_opt (fun s -> match s with
       | Type t when (String.equal t.name "t") -> true 
       | _ -> false) items with
-  Some (Type t) -> List.map (fun (s, type_) -> (s, typ_of_type_ type_))
-                     t.models
+  Some (Type t) -> List.fold_right (fun (s, type_) acc ->
+      match safe_add s (typ_of_type_ type_) acc with
+      |`Ok out -> out
+      | `Duplicate key -> raise (Failure ("field declared twice: " ^ key))
+    ) t.models S.empty 
   | _ -> raise (Failure ("type t not declared; could not determine sut"))
 
 
@@ -78,24 +85,7 @@ let arb_cmd : cmd -> arb_cmd =
       List.map (fun arg -> mk_qcheck arg.arg_type) args)
 
 
-(*let payload_pattern name expr =
-  let open Ast_pattern in
-  pstr (pstr_value nonrecursive (value_binding ~pat:(pstring __) ~expr:__) ^:: nil)*)
-
-(*this is gross
-ret.field1 = 0*)
-
-(*| [%type: [%t? t] list] ->
-      [%expr
-        fun lst ->
-          "["
-          ^ List.fold_left
-              (fun acc s -> acc ^ [%e expr_of_type t] s ^ ";")
-              "" lst
-          ^ "]"]
-is t a bound variable?
-*)
-    (* 
+    (*  my attempt at using fancier patter matching, bad
   let is_of_int fn = 
     match fn.pexp_desc with
     | Pexp_ident longident -> (longident.txt = Ldot (Ldot (Lident "Ortac_runtime", "Z"), "of_int"))
@@ -165,24 +155,42 @@ need to support old start here*)
   now i have a string * expression list with
   (field_name, expression it is initialized to )
 *)
-let init_state (items: Translated.structure_item list) (state: state): init_state =
-  let init_state_ele (posts: term list) (field : string) (ret_name : string ) : expression =
-    let field_name = Printf.sprintf "%s.%s" ret_name field in
-    Printf.printf("field name is: %s\n%!") field_name;
-   ( match List.find_opt (fun (term: term) -> match term.translation with
-        Ok exp ->
-        Printf.printf("lhs is: %s\n%!") (exp |> get_lhs |> Option.get);
-        (get_lhs exp = Some field_name)
+
+let get_field_rhs (equations: term list) (field: string) (prefix: string) : expression = 
+  let field = Printf.sprintf "%s.%s" prefix field in
+  Printf.printf("field name is: %s\n%!") field;
+  ( match List.find_opt (fun (term: term) -> match term.translation with
+          Ok exp ->
+          Printf.printf("lhs is: %s\n%!") (exp |> get_lhs |> Option.get);
+          (get_lhs exp = Some field)
         | _ -> false 
-      ) posts with (*found a term which sets the field name equal to something*)
-    Some term -> (term.translation |> Result.get_ok |> get_rhs_exn)
+      ) equations with (*found a term which sets the field name equal to something*)
+      Some term -> (term.translation |> Result.get_ok |> get_rhs_exn)
     | None -> raise (Failure (Printf.sprintf "field %s undefined" field)))
-    in
+
+let init_state (items: Translated.structure_item list) (state: state): init_state =
   match List.find_opt (fun item -> match item with
-      | Value v when (String.equal v.name "init_sut") -> true 
+      | Value cmd_item when (String.equal cmd_item.name "init_sut") -> true 
       | _ -> false) items with
-  Some (Value v) -> assert (List.length v.returns = 1);
-  let ret_name = (List.hd v.returns).name in
-  List.map (fun (field, _) -> (field, init_state_ele v.postconditions field ret_name)) state
+  Some (Value cmd_item) -> assert (List.length cmd_item.returns = 1);
+  let ret_name = (List.hd cmd_item.returns).name in
+  S.mapi (fun field _ -> get_field_rhs cmd_item.postconditions field ret_name) state
   | _ -> raise (Failure "init_sut undefined; could not initialize")
 
+
+
+let next_state items (cmds: cmd) state : next_state =
+  S.mapi (fun cmd args ->
+      let cmd_item = List.find (fun item -> match item with
+          | Value v when (v.name = cmd) -> true
+          | _ -> false) items |> value
+      in
+      let pres : expression list =
+        (List.map (fun (pre: Translated.term) -> pre.translation |> Result.get_ok) cmd_item.preconditions) @
+      (List.map (fun check -> check.translations |> Result.get_ok |> fst) cmd_item.checks) in
+        (*silly processing to get the check*)
+      let next = assert (List.length cmd_item.returns = 1);
+        let ret_name = (List.hd cmd_item.returns).name in
+        S.mapi (fun field _ -> get_field_rhs cmd_item.postconditions field ret_name) state in
+      {args; pres; next})
+    cmds

@@ -24,9 +24,9 @@ type typ =
   | String
   | Bool
   | Unit
-  | List of typ 
+  | List of typ
 
-type term = Translated.term
+
 (*
 type term = {
   txt : string;
@@ -48,7 +48,7 @@ definitely thrown out by the time you get to drv?
 field name * field type
   really does not support polymorphism, need a much better type for types than strings
 *)
-type state = (string * typ) list
+type state = typ S.t
 
 (*type sut = NOT NECESSARY, just do module_name.t *)
 
@@ -61,7 +61,7 @@ if arg list is empty then do Gen.return
 fields in the state are set*)
 (*assume for now <5 args or whatever the highest map is *)
 
-type init_state = (string * expression) list
+type init_state = expression S.t
   (* <- just a tuple of value. get these values from the ensures of create in gospel which in the drv.t is a term list. you have to go into the term to find the state_element_n = __expression__.
      ensures condition.*)
 
@@ -75,12 +75,12 @@ type init_state = (string * expression) list
   <search through the ensures for state_entry_n = ____> <- START HERE where is this put exactly? what does this look like?
   right now packaged as
   for each function, <a list of the arguments>, <A list of all the requires and checks>,
-  <a list of n equalities, where there are n fields in the state>
+  <a map of field name to the thing it is assigned to>
 *)
+type next_state_case = {args: arg list; pres: expression list; next: expression S.t} 
+type next_state = next_state_case S.t 
 
-type next_state = (arg list * term list * term list) S.t 
-
-(*command name, arguments, can raise exn*)
+(*command name -> arguments, can raise exn*)
 type run = (arg list * bool) S.t
 
 
@@ -89,9 +89,13 @@ iff a raises then raise that Exn (dont support this for right now)
 Otherwise need to look in the ensures for result = __
 for each fn (all the checks, the result = in the ensures)
 *)
-type postcond = (arg list * term list * term) S.t
+type postcond_case = {args: arg list; checks: expression list; next: expression S.t}
+type postcond = postcond_case S.t
 
 (*assumptions:
   1. the system under test is called 't' in the gospel file
   2. all of the functions take values of base types as arguments
   3. system under test*)
+
+
+(*where to put the requires? in the precondition? *)
