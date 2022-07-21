@@ -57,6 +57,12 @@ print a drv example with a function that takes a bool list as argument.
 
 if it does throw this out then you need to add params and argument fields to the type_ *)
 
+let find_value items name =
+  List.find_opt (fun item -> match item with
+                    | Value v when (v.name = name) -> true
+                    | _ -> false) items |> Option.map value
+
+
 let cmd (items: Translated.structure_item list) : Ast3.cmd =
  List.fold_right (fun item acc -> match item with
       (*need to require here that the first argument is t*)
@@ -169,22 +175,17 @@ let get_field_rhs (equations: term list) (field: string) (prefix: string) : expr
     | None -> raise (Failure (Printf.sprintf "field %s undefined" field)))
 
 let init_state (items: Translated.structure_item list) (state: state): init_state =
-  match List.find_opt (fun item -> match item with
-      | Value cmd_item when (String.equal cmd_item.name "init_sut") -> true 
-      | _ -> false) items with
-  Some (Value cmd_item) -> assert (List.length cmd_item.returns = 1);
+  match find_value items "init_sut" with
+  Some cmd_item -> assert (List.length cmd_item.returns = 1);
   let ret_name = (List.hd cmd_item.returns).name in
   S.mapi (fun field _ -> get_field_rhs cmd_item.postconditions field ret_name) state
-  | _ -> raise (Failure "init_sut undefined; could not initialize")
+  | None -> raise (Failure "init_sut undefined; could not initialize")
 
 
 
 let next_state items (cmds: cmd) state : next_state =
   S.mapi (fun cmd args ->
-      let cmd_item = List.find (fun item -> match item with
-          | Value v when (v.name = cmd) -> true
-          | _ -> false) items |> value
-      in
+      let cmd_item = Option.get (find_value items cmd) in
       let pres : expression list =
         (List.map (fun (pre: Translated.term) -> pre.translation |> Result.get_ok) cmd_item.preconditions) @
       (List.map (fun check -> check.translations |> Result.get_ok |> fst) cmd_item.checks) in
@@ -193,4 +194,10 @@ let next_state items (cmds: cmd) state : next_state =
         let ret_name = (List.hd cmd_item.returns).name in
         S.mapi (fun field _ -> get_field_rhs cmd_item.postconditions field ret_name) state in
       {args; pres; next})
+    cmds
+
+(*if it doesnt say pure assume it can raise*)
+let run items cmds = S.mapi
+    (fun cmd args ->
+    let cmd_item = find_value items cmd |> Option.get in (args, cmd_item.pure))
     cmds
