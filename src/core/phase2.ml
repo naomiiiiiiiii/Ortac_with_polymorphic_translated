@@ -174,25 +174,26 @@ let get_field_rhs (equations: term list) (field: string) (prefix: string) : expr
       Some term -> (term.translation |> Result.get_ok |> get_rhs_exn)
     | None -> raise (Failure (Printf.sprintf "field %s undefined" field)))
 
+let make_next (cmd_item: Translated.value) (state: state) =
+  assert (List.length cmd_item.returns = 1); (*should make this a helper function start here*)
+  let ret_name = (List.hd cmd_item.returns).name in
+  S.mapi (fun field _ -> get_field_rhs cmd_item.postconditions field ret_name) state 
+
 let init_state (items: Translated.structure_item list) (state: state): init_state =
   match find_value items "init_sut" with
-  Some cmd_item -> assert (List.length cmd_item.returns = 1);
-  let ret_name = (List.hd cmd_item.returns).name in
-  S.mapi (fun field _ -> get_field_rhs cmd_item.postconditions field ret_name) state
+  Some cmd_item -> make_next cmd_item state
   | None -> raise (Failure "init_sut undefined; could not initialize")
 
-
+let translate_checks = List.map (fun check -> check.translations |> Result.get_ok |> fst)
 
 let next_state items (cmds: cmd) state : next_state =
   S.mapi (fun cmd args ->
       let cmd_item = Option.get (find_value items cmd) in
       let pres : expression list =
         (List.map (fun (pre: Translated.term) -> pre.translation |> Result.get_ok) cmd_item.preconditions) @
-      (List.map (fun check -> check.translations |> Result.get_ok |> fst) cmd_item.checks) in
+      (translate_checks cmd_item.checks) in
         (*silly processing to get the check*)
-      let next = assert (List.length cmd_item.returns = 1);
-        let ret_name = (List.hd cmd_item.returns).name in
-        S.mapi (fun field _ -> get_field_rhs cmd_item.postconditions field ret_name) state in
+      let next = make_next cmd_item state in
       {args; pres; next})
     cmds
 
@@ -201,3 +202,15 @@ let run items cmds = S.mapi
     (fun cmd args ->
     let cmd_item = find_value items cmd |> Option.get in (args, cmd_item.pure))
     cmds
+
+let postcond items cmds state : postcond = S.mapi
+(fun cmd args ->
+  let cmd_item = Option.get (find_value items cmd) in
+  let checks = translate_checks cmd_item.checks in
+  let raises = [] in (*start here*)
+  let next = make_next cmd_item state in
+{args; checks; raises; next }
+)
+cmds 
+
+

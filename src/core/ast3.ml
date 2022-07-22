@@ -89,7 +89,10 @@ iff a raises then raise that Exn (dont support this for right now)
 Otherwise need to look in the ensures for result = __
 for each fn (all the checks, the result = in the ensures)
 *)
-type postcond_case = {args: arg list; checks: expression list; next: expression S.t}
+    (*start here what is ppx for exception? *)
+type postcond_case =
+  {args: arg list; checks: expression list; raises: (string * expression) list; 
+     next: expression S.t}
 type postcond = postcond_case S.t
 
 (*assumptions:
