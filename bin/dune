@@ -17,4 +17,6 @@ ortac_stm
   ppxlib
 pp_loc
 ppx_jane
-  ppxlib.ast))
+  ppxlib.ast)
+(modules_without_implementation atom)
+)

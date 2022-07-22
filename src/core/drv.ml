@@ -10,8 +10,6 @@ type sil = Translated.structure_item list
 [@@deriving sexp_of]
 
 
-(*printing these to figure out what exactly is in these
-so I know how to set up the ast type *)
 type t = {
   module_name : string; (*Example for example.mli
                         dont need this.*)

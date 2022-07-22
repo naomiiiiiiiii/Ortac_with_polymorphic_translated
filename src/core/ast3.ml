@@ -20,12 +20,22 @@ from there turn into this.
 
 (*need to change this to be the gospel ints*)
 type typ =
+  | Int
   | Integer
   | String
   | Bool
   | Unit
   | List of typ
 
+let get_typ_args t =
+  match t with
+  | List a -> [a]
+  | Int | Integer | String | Bool| Unit -> []
+  (*the fields of type t should not use the int type but the arguments
+    and return type of create can use the int type
+    the fields of type t are the only ones that you ever have to pull out of the ensures
+    so you dont need to put back the is_of_int check in get_sides
+    but do add an int constructor above *)
 
 (*
 type term = {
@@ -94,6 +104,16 @@ type postcond_case =
   {args: arg list; checks: expression list; raises: (string * expression) list; 
      next: expression S.t}
 type postcond = postcond_case S.t
+
+type stm = {module_name : string;
+            cmd: cmd;
+            state : state;
+            arb_cmd : arb_cmd;
+            init_state: init_state;
+            next_state: next_state;
+            run: run;
+            postcond: postcond
+           }
 
 (*assumptions:
   1. the system under test is called 't' in the gospel file

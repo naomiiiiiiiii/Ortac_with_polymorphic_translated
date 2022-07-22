@@ -185,18 +185,27 @@ let axiom (a : Translated.axiom) =
   [ [%stri let () = [%e body]] ]
 
 
-let structure runtime (driver: Drv.t) : structure =
-   Drv.print_t driver ;
-  (pmod_ident (lident (Drv.module_name driver)) |> include_infos |> pstr_include)
-  :: pstr_module
-       (module_binding
-          ~name:{ txt = Some "Ortac_runtime"; loc }
-          ~expr:(pmod_ident (lident runtime)))
-  :: (Drv.map_translation driver ~f:(function (*applies this to the translations inside the drivers (look like they get added backwards?)*)
-        | Translated.Value v -> value v
-        | Translated.Function f -> function_ f
-        | Translated.Predicate f -> function_ f
-        | Translated.Constant c -> constant c
-        | Translated.Type t -> type_ t
-        | Translated.Axiom a -> axiom a)
-     |> List.flatten)
+let structure runtime (driver: Drv.t) : Parsetree.structure_item list =
+  (*  Drv.print_t driver ; *)
+  let first : Parsetree.structure_item =
+    (pmod_ident (lident (Drv.module_name driver)) |> include_infos |> pstr_include) in
+  (*include statement for the user module*)
+  let second : Parsetree.structure_item = pstr_module
+      (module_binding
+         ~name:{ txt = Some "Ortac_runtime"; loc }
+         ~expr:(pmod_ident (lident runtime))) (*module Ortac_runtime = Ortac_runtime
+                                              do i need this?*)
+  in
+  let translated_to_parsetree : Translated.structure_item -> Parsetree.structure_item list =
+    (function
+            (*applies this to the translations inside the drivers (look like they get added backwards?)*)
+            | Translated.Value v -> value v
+            | Translated.Function f -> function_ f (*dont need*)
+            | Translated.Predicate f -> function_ f (*dont need*)
+            | Translated.Constant c -> constant c (*dont need *)
+            | Translated.Type t -> type_ t (*dont need*)
+            | Translated.Axiom a -> axiom a) (*dont need*)
+  in
+  first
+  :: second
+  :: (Drv.map_translation driver ~f:translated_to_parsetree |> List.flatten)

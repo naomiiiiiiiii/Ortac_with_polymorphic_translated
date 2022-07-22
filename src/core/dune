@@ -3,4 +3,4 @@
  (preprocess
   (pps ppx_jane ppxlib.metaquot))
  (package ortac)
- (libraries fmt gospel ppxlib ppxlib.ast core))
+ (libraries fmt gospel ppxlib ppxlib.ast core ortac_runtime))

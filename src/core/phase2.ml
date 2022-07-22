@@ -10,10 +10,12 @@ let value v = match v with Value v -> v | _ -> raise (Failure "not value")
 
 let unsupported_type s = raise (Failure ("unsupported type: " ^ s ))
 
+(*need to support Integer because this is used to convert the models
+start here*)
 let rec typ_of_type_ (ty: type_)  =
   let base_typ_of_string s =
     match s with
-    | "int" -> Integer
+    | "int" -> Int
     | "string" -> String
     | "bool" -> Bool
     | "unit" -> Unit
@@ -26,17 +28,19 @@ let rec typ_of_type_ (ty: type_)  =
     | _ -> unsupported_type ty.name)
   | _ -> raise (Failure "no type with multiple arguments supported")
 
-(*ask Jan is it the best idea to do strings here
-also magic numbers for the odds*)
+(*
+magic numbers*)
 let mk_qcheck (typ: Ast3.typ) : expression =
   let loc = !Ast_helper.default_loc in
   let rec mk_qcheck_help typ = 
   match typ with
-  | Integer ->  [%expr frequency [(1, small_nat); (20, int)]]
+  | Int ->  [%expr frequency [(1, small_nat); (20, int)]]
+  | Integer -> raise (Failure "cannot make generator for Gospel stdlib type Integer")
   | String -> [%expr frequency [(1, small_string); (20, string)]]
   | Bool -> [%expr bool]
   | Unit -> [%expr unit]
-  | List typ -> [%expr list [%e mk_qcheck_help typ]] in
+  | List typ -> [%expr list [%e mk_qcheck_help typ]]
+  in
   [%expr Gen.([%e mk_qcheck_help typ])]
 
 (* [%expr [%e raise Div]] *)
@@ -67,7 +71,7 @@ let cmd (items: Translated.structure_item list) : Ast3.cmd =
  List.fold_right (fun item acc -> match item with
       (*need to require here that the first argument is t*)
       | Value v when (v.arguments <> []) && (v.name <> "init_sut") ->
-         (match (safe_add v.name (List.map (fun (arg: ocaml_var) ->
+         (match (safe_add (String.capitalize_ascii v.name) (List.map (fun (arg: ocaml_var) ->
             mk_arg arg.name arg.label arg.type_)
                 v.arguments) acc) with
          |`Ok out -> out
@@ -212,5 +216,17 @@ let postcond items cmds state : postcond = S.mapi
 {args; checks; raises; next }
 )
 cmds 
+
+let stm (driver : Drv.t) : Ast3.stm  =
+  let items = driver.translations in 
+  let cmd = cmd items in
+  let state = state items in
+  let arb_cmd = arb_cmd cmd in
+  let init_state = init_state items state in
+  let next_state = next_state items cmd state in
+  let run = run items cmd in
+  let postcond = postcond items cmd state in
+  {module_name = driver.module_name; cmd; state; arb_cmd; init_state; next_state; run; postcond}
+
 
 
