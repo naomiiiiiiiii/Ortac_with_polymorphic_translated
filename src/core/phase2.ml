@@ -1,14 +1,15 @@
  open Translated
 open Ast3
     open Ppxlib
-(* open Builder *)
+ open Builder 
 
 module S = Map.Make (String)
+
+let unsupported_type s = raise (Failure ("unsupported type: " ^ s ))
 
 let value v = match v with Value v -> v | _ -> raise (Failure "not value")
 
 
-let unsupported_type s = raise (Failure ("unsupported type: " ^ s ))
 
 (*need to support Integer because this is used to convert the models
 start here*)
@@ -24,9 +25,10 @@ let rec typ_of_type_ (ty: type_)  =
   match ty.args with
   | [] -> base_typ_of_string ty.name
   | [arg] -> (match ty.name with
-    "List" -> List (typ_of_type_ arg)
-    | _ -> unsupported_type ty.name)
+        "List" -> List (typ_of_type_ arg)
+      | _ -> unsupported_type ty.name)
   | _ -> raise (Failure "no type with multiple arguments supported")
+
 
 (*
 magic numbers*)
@@ -44,8 +46,6 @@ let mk_qcheck (typ: Ast3.typ) : expression =
   [%expr Gen.([%e mk_qcheck_help typ])]
 
 (* [%expr [%e raise Div]] *)
-
-
 let mk_arg name label type_ : Ast3.arg = {arg_name = name;
                                           arg_label = label;
                                           arg_type = typ_of_type_ type_}
@@ -63,15 +63,21 @@ if it does throw this out then you need to add params and argument fields to the
 
 let find_value items name =
   List.find_opt (fun item -> match item with
-                    | Value v when (v.name = name) -> true
+                    | Value v when ( v.name =
+                                     name) -> true
                     | _ -> false) items |> Option.map value
 
 
 let cmd (items: Translated.structure_item list) : Ast3.cmd =
+  (*is v an stm command candidate *)
+ let is_stmable (v : Translated.value) = (v.arguments <> []) && (v.name <> "init_sut") &&
+                    (List.length v.arguments >= 1) && ((List.hd v.arguments).type_.name = "t") in
+ let make_stmable (v: Translated.value) = {v with arguments = (List.tl v.arguments)} in
  List.fold_right (fun item acc -> match item with
       (*need to require here that the first argument is t*)
-      | Value v when (v.arguments <> []) && (v.name <> "init_sut") ->
-         (match (safe_add (String.capitalize_ascii v.name) (List.map (fun (arg: ocaml_var) ->
+      | Value v when (is_stmable v) 
+        -> let v = make_stmable v in
+         (match (safe_add v.name (List.map (fun (arg: ocaml_var) ->
             mk_arg arg.name arg.label arg.type_)
                 v.arguments) acc) with
          |`Ok out -> out
@@ -178,10 +184,15 @@ let get_field_rhs (equations: term list) (field: string) (prefix: string) : expr
       Some term -> (term.translation |> Result.get_ok |> get_rhs_exn)
     | None -> raise (Failure (Printf.sprintf "field %s undefined" field)))
 
+let test = evar
+
+(*start here does this work if return is a wildcard *)
 let make_next (cmd_item: Translated.value) (state: state) =
-  assert (List.length cmd_item.returns = 1); (*should make this a helper function start here*)
-  let ret_name = (List.hd cmd_item.returns).name in
-  S.mapi (fun field _ -> get_field_rhs cmd_item.postconditions field ret_name) state 
+  let loc = !Ast_helper.default_loc in (*start here ?? *)
+  let ret_name = if (List.length cmd_item.returns = 0) then "" else
+      (List.hd cmd_item.returns).name in
+  S.mapi (fun field _ -> if cmd_item.pure then [%expr s.([%e (evar field)]) ]
+           else get_field_rhs cmd_item.postconditions field ret_name) state
 
 let init_state (items: Translated.structure_item list) (state: state): init_state =
   match find_value items "init_sut" with
@@ -192,7 +203,10 @@ let translate_checks = List.map (fun check -> check.translations |> Result.get_o
 
 let next_state items (cmds: cmd) state : next_state =
   S.mapi (fun cmd args ->
-      let cmd_item = Option.get (find_value items cmd) in
+      let cmd_item = (match (find_value items cmd) with
+          None -> raise (Failure ("could not find " ^ cmd))
+          | Some cmd_item -> cmd_item)
+      in
       let pres : expression list =
         (List.map (fun (pre: Translated.term) -> pre.translation |> Result.get_ok) cmd_item.preconditions) @
       (translate_checks cmd_item.checks) in

@@ -39,7 +39,7 @@ let mk_core_typ (arg : Ast3.arg) : core_type = typ_to_core_type arg.arg_type
 let mk_cmd (cmd : Ast3.cmd) : structure_item =
   let mk_variant (cmd : Ast3.cmd) =
     Ptype_variant (List.map (fun (name, args) ->
-        constructor_declaration ~name:(noloc name)
+        constructor_declaration ~name:(noloc (String.capitalize_ascii name))
           ~args:(Pcstr_tuple (List.map mk_core_typ args))
           ~res: None)
       (S.bindings cmd)) in
