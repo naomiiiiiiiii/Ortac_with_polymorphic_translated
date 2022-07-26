@@ -124,7 +124,18 @@ let arb_cmd : cmd -> arb_cmd =
   let ident: string option = get_ident lhs in 
 (match exp with
   [%expr: [%e? lhs] = [%e? rhs]] -> Option.map ident (fun s -> (s, rhs))
-  | _ -> None ) *)
+        | _ -> None ) *)
+
+(*what if instead of this garbage you took all the ensures that haven't been used already and put them in
+the post condition*)
+let rec contains_ident ident exp =
+  let contains_ident = contains_ident ident in 
+  match exp with
+  | Pexp_ident li -> contains_ident_li ident li
+  | Pexp_constant _ -> false
+  | Pexp_let (_, vbs, exp) -> List.fold (fun vb ac -> contains_ident_vb vb || acc) vbs
+                                (contains_ident exp)
+  | Pexp_function cases -> 
 
 let get_sides  (exp: expression) : (string * expression) option  =
  let rec get_ident (exp: expression) : string option  =
@@ -237,7 +248,7 @@ let postcond items cmds state : postcond =
   let args = cmd_data.args in
   let checks = translate_checks cmd_item.checks in
   let raises = [] in (*start here*)
- let postcond = List.filter (eq_contains_ident ret_name)
+ let postcond = List.filter (contains_ident ret_name) (*start here*)
      (List.map (fun t -> t.translation) cmd_item.postconditions) in
    (*want the whole equals here
                                                            not just the rhs,
