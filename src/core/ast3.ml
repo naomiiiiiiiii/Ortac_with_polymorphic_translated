@@ -44,12 +44,14 @@ type term = {
 }
 [@@deriving sexp_of] *)
 
-type arg = {arg_name : string; arg_label : arg_label; arg_type: typ}
+type ocaml_var = {name : string; label : label; typ: typ}
 
-
-(*maps the name of the fn to its argument types
+(*maps the name of the fn to its argument types and return types, and also the name of the
+  special first argument which is always of type t
+  (not included in the cmd type, etc)
 *)
-type cmd=  (arg list) S.t
+type cmd_ele = {targ_name: string; args: ocaml_var list; ret: ocaml_var }
+type cmd= cmd_ele S.t
 
 (*will get this from the models of t (sut)
 since the other types are stored as strings might as well
@@ -96,13 +98,17 @@ type run = (arg list * bool) S.t
 
 (*iff checks then raise invalid argument
 iff a raises then raise that Exn (dont support this for right now)
-Otherwise need to look in the ensures for result = __
-for each fn (all the checks, the result = in the ensures)
+Otherwise need to look in the ensures for all conditions to do with result _op _ _rhs_
+for each fn
+  (the arguments for the pattern matching, the return string for pattern matching,
+  all the checks,
+  the result in the ensures)
 *)
-    (*start here what is ppx for exception? *)
 type postcond_case =
-  {args: arg list; checks: expression list; raises: (string * expression) list; 
-     next: expression S.t}
+  {args: arg list; return: string;
+   checks: expression list;
+   raises: (string * expression) list; (*? is this the right type*)
+   postcond: expression list; (*need to conjoin all of these *) }
 type postcond = postcond_case S.t
 
 type stm = {module_name : string;

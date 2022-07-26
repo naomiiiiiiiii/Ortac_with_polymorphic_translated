@@ -85,9 +85,6 @@ let type_ ~(driver : Drv.t) ~ghost (td : Tast.type_declaration) : Drv.t =
     let mutable_ = Mutability.(max (type_.Ts.mutable_) (type_spec ~driver spec)) in
     (*mutability is the maximum of the mutability gotten from the driver and the mutability
       in the spec*)
-    let models = type_.Ts.models (*this is wrong, need to convert models here,
-                                 start here*)
-    in
     let (type_ : Ts.type_) =
       type_
       |> with_models ~driver spec.ty_fields
@@ -95,7 +92,7 @@ let type_ ~(driver : Drv.t) ~ghost (td : Tast.type_declaration) : Drv.t =
       |> with_invariants ~driver ~term_printer spec.ty_invariants
       (*need to support invariants later, start here*)
     in
-    { type_ with mutable_ ; models }
+    { type_ with mutable_ }
   in
   let type_ = Option.fold ~none:type_ ~some:(process ~type_) td.td_spec in
   let type_item : Ts.structure_item = Ts.Type type_ in

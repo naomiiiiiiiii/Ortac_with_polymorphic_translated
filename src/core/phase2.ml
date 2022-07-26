@@ -11,13 +11,13 @@ let value v = match v with Value v -> v | _ -> raise (Failure "not value")
 
 
 
-(*need to support Integer because this is used to convert the models
-start here*)
-let rec typ_of_type_ (ty: type_)  =
+(*start here take error out*)
+let rec typ_of_type_ (error: string) (ty: type_)  =
   let base_typ_of_string s =
     match s with
-    | "int" -> Int
-    | "string" -> String
+    | "integer" ->  Integer
+    | "int" ->  Int
+    | "string" ->  String
     | "bool" -> Bool
     | "unit" -> Unit
     | _ -> unsupported_type s 
@@ -25,7 +25,7 @@ let rec typ_of_type_ (ty: type_)  =
   match ty.args with
   | [] -> base_typ_of_string ty.name
   | [arg] -> (match ty.name with
-        "List" -> List (typ_of_type_ arg)
+        "List" -> List (typ_of_type_ error arg)
       | _ -> unsupported_type ty.name)
   | _ -> raise (Failure "no type with multiple arguments supported")
 
@@ -46,9 +46,9 @@ let mk_qcheck (typ: Ast3.typ) : expression =
   [%expr Gen.([%e mk_qcheck_help typ])]
 
 (* [%expr [%e raise Div]] *)
-let mk_arg name label type_ : Ast3.arg = {arg_name = name;
+let mk_arg name label type_ : Ast3.arg =  {arg_name = name;
                                           arg_label = label;
-                                          arg_type = typ_of_type_ type_}
+                                          arg_type = typ_of_type_ name type_}
 
 let safe_add (key : string) v (m : 'a S.t) = match S.find_opt key m with
   None -> `Ok (S.add key v m)
@@ -72,24 +72,28 @@ let cmd (items: Translated.structure_item list) : Ast3.cmd =
   (*is v an stm command candidate *)
  let is_stmable (v : Translated.value) = (v.arguments <> []) && (v.name <> "init_sut") &&
                     (List.length v.arguments >= 1) && ((List.hd v.arguments).type_.name = "t") in
- let make_stmable (v: Translated.value) = {v with arguments = (List.tl v.arguments)} in
+ let make_stmable (v: Translated.value) =
+   ((List.hd v.arguments).name, {v with arguments = (List.tl v.arguments)}) in
  List.fold_right (fun item acc -> match item with
       (*need to require here that the first argument is t*)
-      | Value v when (is_stmable v) 
-        -> let v = make_stmable v in
-         (match (safe_add v.name (List.map (fun (arg: ocaml_var) ->
-            mk_arg arg.name arg.label arg.type_)
-                v.arguments) acc) with
+      | Value v when (is_stmable v) ->
+        let (tname, v) = make_stmable v in
+         (match (safe_add v.name
+                   {tname; args = (List.map (fun (arg: ocaml_var) ->
+                        mk_arg arg.name arg.label arg.type_)
+                        v.arguments)} acc) with
          |`Ok out -> out
          | `Duplicate key -> raise (Failure ("function declared twice: " ^ key)))
       | _ -> acc) items S.empty
 
 let state items : Ast3.state  =
-  match List.find_opt (fun s -> match s with
+  match List.find_opt (fun s ->
+      match s with
       | Type t when (String.equal t.name "t") -> true 
       | _ -> false) items with
-  Some (Type t) -> List.fold_right (fun (s, type_) acc ->
-      match safe_add s (typ_of_type_ type_) acc with
+  | Some (Type t) ->
+    List.fold_right (fun (s, type_) acc ->
+      match safe_add s (typ_of_type_ s type_) acc with
       |`Ok out -> out
       | `Duplicate key -> raise (Failure ("field declared twice: " ^ key))
     ) t.models S.empty 
@@ -97,8 +101,8 @@ let state items : Ast3.state  =
 
 
 let arb_cmd : cmd -> arb_cmd =
-  S.map (fun args ->
-      List.map (fun arg -> mk_qcheck arg.arg_type) args)
+  S.map (fun (cmd_ele: cmd_ele) ->
+      List.map (fun arg -> mk_qcheck arg.arg_type) cmd_ele.args)
 
 
     (*  my attempt at using fancier patter matching, bad
@@ -172,37 +176,40 @@ need to support old start here*)
   (field_name, expression it is initialized to )
 *)
 
-let get_field_rhs (equations: term list) (field: string) (prefix: string) : expression = 
+let get_field_rhs ?(error = "Unknown") (equations: term list) (field: string)
+    (prefix: string) : expression =
   let field = Printf.sprintf "%s.%s" prefix field in
-  Printf.printf("field name is: %s\n%!") field;
   ( match List.find_opt (fun (term: term) -> match term.translation with
           Ok exp ->
-          Printf.printf("lhs is: %s\n%!") (exp |> get_lhs |> Option.get);
+          (* Printf.printf("lhs is: %s\n%!") (exp |> get_lhs |> Option.get); *)
           (get_lhs exp = Some field)
         | _ -> false 
       ) equations with (*found a term which sets the field name equal to something*)
       Some term -> (term.translation |> Result.get_ok |> get_rhs_exn)
-    | None -> raise (Failure (Printf.sprintf "field %s undefined" field)))
+    | None -> raise (Failure (Printf.sprintf "field %s undefined in %s" field error)))
 
-let test = evar
+(*init sut is the only one which returns a state
+so to access the fields you do ret_name.fieldname
 
-(*start here does this work if return is a wildcard *)
-let make_next (cmd_item: Translated.value) (state: state) =
+for all the others it's just arg_name.field name
+wait lol**)
+let make_next (cmd_item: Translated.value) (state: state) (prefix: string) =
   let loc = !Ast_helper.default_loc in (*start here ?? *)
-  let ret_name = if (List.length cmd_item.returns = 0) then "" else
-      (List.hd cmd_item.returns).name in
   S.mapi (fun field _ -> if cmd_item.pure then [%expr s.([%e (evar field)]) ]
-           else get_field_rhs cmd_item.postconditions field ret_name) state
+           (*s is a special variable*)
+           else get_field_rhs ~error:cmd_item.name cmd_item.postconditions field prefix) state
 
 let init_state (items: Translated.structure_item list) (state: state): init_state =
   match find_value items "init_sut" with
-  Some cmd_item -> make_next cmd_item state
+    Some cmd_item -> assert (List.length cmd_item.returns = 1);
+    make_next cmd_item state (List.hd cmd_item.returns).name
   | None -> raise (Failure "init_sut undefined; could not initialize")
 
 let translate_checks = List.map (fun check -> check.translations |> Result.get_ok |> fst)
 
 let next_state items (cmds: cmd) state : next_state =
-  S.mapi (fun cmd args ->
+  S.mapi (fun cmd (cmd_ele : cmd_ele) ->
+      let args = cmd_ele.args in
       let cmd_item = (match (find_value items cmd) with
           None -> raise (Failure ("could not find " ^ cmd))
           | Some cmd_item -> cmd_item)
@@ -211,7 +218,7 @@ let next_state items (cmds: cmd) state : next_state =
         (List.map (fun (pre: Translated.term) -> pre.translation |> Result.get_ok) cmd_item.preconditions) @
       (translate_checks cmd_item.checks) in
         (*silly processing to get the check*)
-      let next = make_next cmd_item state in
+      let next = make_next cmd_item state cmd_ele.tname in
       {args; pres; next})
     cmds
 
@@ -221,13 +228,22 @@ let run items cmds = S.mapi
     let cmd_item = find_value items cmd |> Option.get in (args, cmd_item.pure))
     cmds
 
-let postcond items cmds state : postcond = S.mapi
-(fun cmd args ->
+(*would be nice if you could warn the user if some postconds are not translated
+start here*)
+let postcond items cmds state : postcond =
+  S.mapi
+(fun cmd cmd_data ->
   let cmd_item = Option.get (find_value items cmd) in
+  let args = cmd_data.args in
   let checks = translate_checks cmd_item.checks in
   let raises = [] in (*start here*)
-  let next = make_next cmd_item state in
-{args; checks; raises; next }
+ let postcond = List.filter (eq_contains_ident ret_name)
+     (List.map (fun t -> t.translation) cmd_item.postconditions) in
+   (*want the whole equals here
+                                                           not just the rhs,
+                                                           probably shouldnt use make_next*)
+     (*need a conjunction of all the ensures with the result name on either side of the equals*)
+{args; checks; raises; postcond }
 )
 cmds 
 
