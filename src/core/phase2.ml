@@ -4,6 +4,9 @@ open Ast3
  open Builder 
 
 module S = Map.Make (String)
+    module I = Map.Make (Int)
+
+let enum = List.mapi (fun i x -> (i, x)) 
 
 let unsupported_type s = raise (Failure ("unsupported type: " ^ s ))
 
@@ -46,9 +49,10 @@ let mk_qcheck (typ: Ast3.typ) : expression =
   [%expr Gen.([%e mk_qcheck_help typ])]
 
 (* [%expr [%e raise Div]] *)
-let mk_arg name label type_ : Ast3.arg =  {arg_name = name;
-                                          arg_label = label;
-                                          arg_type = typ_of_type_ name type_}
+let mk_ocaml_var (v: Translated.ocaml_var) : Ast3.ocaml_var =
+  {name = v.name;
+                                          label = v.label;
+                                          typ = typ_of_type_ v.name v.type_}
 
 let safe_add (key : string) v (m : 'a S.t) = match S.find_opt key m with
   None -> `Ok (S.add key v m)
@@ -70,18 +74,21 @@ let find_value items name =
 
 let cmd (items: Translated.structure_item list) : Ast3.cmd =
   (*is v an stm command candidate *)
- let is_stmable (v : Translated.value) = (v.arguments <> []) && (v.name <> "init_sut") &&
-                    (List.length v.arguments >= 1) && ((List.hd v.arguments).type_.name = "t") in
+ let is_stmable (v : Translated.value) =
+  (v.name <> "init_sut") && (List.length v.arguments >= 1) && ((List.hd v.arguments).type_.name = "t") &&
+  (List.for_all (fun (ret : Translated.ocaml_var) -> ret.type_.name <> "t") v.returns)
+ in
  let make_stmable (v: Translated.value) =
    ((List.hd v.arguments).name, {v with arguments = (List.tl v.arguments)}) in
  List.fold_right (fun item acc -> match item with
       (*need to require here that the first argument is t*)
       | Value v when (is_stmable v) ->
-        let (tname, v) = make_stmable v in
+        let (targ_name, v) = make_stmable v in
          (match (safe_add v.name
-                   {tname; args = (List.map (fun (arg: ocaml_var) ->
-                        mk_arg arg.name arg.label arg.type_)
-                        v.arguments)} acc) with
+                   {targ_name;
+                    args = List.map mk_ocaml_var v.arguments;
+                    ret = List.map mk_ocaml_var v.returns;
+                   } acc) with
          |`Ok out -> out
          | `Duplicate key -> raise (Failure ("function declared twice: " ^ key)))
       | _ -> acc) items S.empty
@@ -102,7 +109,7 @@ let state items : Ast3.state  =
 
 let arb_cmd : cmd -> arb_cmd =
   S.map (fun (cmd_ele: cmd_ele) ->
-      List.map (fun arg -> mk_qcheck arg.arg_type) cmd_ele.args)
+      List.map (fun arg -> mk_qcheck arg.typ) cmd_ele.args)
 
 
     (*  my attempt at using fancier patter matching, bad
@@ -127,7 +134,7 @@ let arb_cmd : cmd -> arb_cmd =
         | _ -> None ) *)
 
 (*what if instead of this garbage you took all the ensures that haven't been used already and put them in
-the post condition*)
+the post condition
 let rec contains_ident ident exp =
   let contains_ident = contains_ident ident in 
   match exp with
@@ -135,7 +142,7 @@ let rec contains_ident ident exp =
   | Pexp_constant _ -> false
   | Pexp_let (_, vbs, exp) -> List.fold (fun vb ac -> contains_ident_vb vb || acc) vbs
                                 (contains_ident exp)
-  | Pexp_function cases -> 
+  | Pexp_function cases -> *)
 
 let get_sides  (exp: expression) : (string * expression) option  =
  let rec get_ident (exp: expression) : string option  =
@@ -188,15 +195,16 @@ need to support old start here*)
 *)
 
 let get_field_rhs ?(error = "Unknown") (equations: term list) (field: string)
-    (prefix: string) : expression =
+    (prefix: string) : int * expression  =
   let field = Printf.sprintf "%s.%s" prefix field in
-  ( match List.find_opt (fun (term: term) -> match term.translation with
+  ( match List.find_opt (fun (_, (term : term)) -> match term.translation with
           Ok exp ->
           (* Printf.printf("lhs is: %s\n%!") (exp |> get_lhs |> Option.get); *)
           (get_lhs exp = Some field)
+        (*start here make sure it doesnt refer to the return value of the command *)
         | _ -> false 
-      ) equations with (*found a term which sets the field name equal to something*)
-      Some term -> (term.translation |> Result.get_ok |> get_rhs_exn)
+      ) (enum equations) with (*found a term which sets the field name equal to something*)
+      Some (i, term) -> (i, (term.translation |> Result.get_ok |> get_rhs_exn))
     | None -> raise (Failure (Printf.sprintf "field %s undefined in %s" field error)))
 
 (*init sut is the only one which returns a state
@@ -204,22 +212,62 @@ so to access the fields you do ret_name.fieldname
 
 for all the others it's just arg_name.field name
 wait lol**)
-let make_next (cmd_item: Translated.value) (state: state) (prefix: string) =
-  let loc = !Ast_helper.default_loc in (*start here ?? *)
-  S.mapi (fun field _ -> if cmd_item.pure then [%expr s.([%e (evar field)]) ]
-           (*s is a special variable*)
-           else get_field_rhs ~error:cmd_item.name cmd_item.postconditions field prefix) state
+(*use a map if you want it to be immutable *)
+  (*this uses mutable state fix this start here*)
+(*init_sut can't be pure start here*)
+(*none of the used change*)
+(*s is a special variable refering to the old state argument for cmds
+  that first argument of type t is always called s*)
+
+let make_next_pure (cmd_item: Translated.value) (state: state) (prefix: string) (used : bool I.t) :
+  expression S.t * bool I.t =
+  let loc = !Ast_helper.default_loc in (*what is this loc start here *)
+  S.fold 
+    (fun field _ (next_state, used) -> 
+       if cmd_item.pure then (S.add field [%expr s.([%e (evar field)]) ] next_state, used)
+       else let (index_used, rhs) = get_field_rhs ~error:cmd_item.name cmd_item.postconditions field prefix in
+         assert(I.find index_used used = false);
+        (S.add field rhs next_state, I.add index_used true used)
+        )
+    state
+    (S.empty, used)
+    (*need to move over the state (map of fields to types) to produce an expression for each field
+    also update what postconditions are used in the map of used post-condition indices *)
+
+let make_next_mut (cmd_item: Translated.value) (state: state) (prefix: string) (used : bool array) :
+  expression S.t =
+  let loc = !Ast_helper.default_loc in (*what is this loc start here *)
+  S.mapi
+    (fun field _ ->
+      if cmd_item.pure then [%expr s.([%e (evar field)]) ]
+      else let (index_used, rhs) = get_field_rhs ~error:cmd_item.name cmd_item.postconditions field prefix in
+        assert (Array.get used index_used = false);          
+           Array.set used index_used true ;
+           rhs)
+    state
+
+
+let mk_used_posts posts = List.fold_right (fun i acc -> I.add i false acc)
+    (List.init (List.length posts) (fun i -> i)) I.empty
 
 let init_state (items: Translated.structure_item list) (state: state): init_state =
   match find_value items "init_sut" with
     Some cmd_item -> assert (List.length cmd_item.returns = 1);
-    make_next cmd_item state (List.hd cmd_item.returns).name
+    make_next_pure cmd_item state (List.hd cmd_item.returns).name (mk_used_posts cmd_item.postconditions)
+    |> fst
   | None -> raise (Failure "init_sut undefined; could not initialize")
 
 let translate_checks = List.map (fun check -> check.translations |> Result.get_ok |> fst)
 
-let next_state items (cmds: cmd) state : next_state =
-  S.mapi (fun cmd (cmd_ele : cmd_ele) ->
+(*(cmd name -> next state expression,
+  cmd name -> which postconditions of that command have been used)
+next_state items cmds state = (states, used)
+  used[cmd_name][i] is true if the ith 'ensures' listed under cmd_name was used
+  in generating states[cmd_name]
+*)
+let next_state items (cmds: cmd) state : next_state * ((bool I.t) S.t)=
+  let unzip (m : 'a S.t) = (S.map fst m, S.map snd m) in
+let zipped =   S.mapi (fun cmd (cmd_ele : cmd_ele) ->
       let args = cmd_ele.args in
       let cmd_item = (match (find_value items cmd) with
           None -> raise (Failure ("could not find " ^ cmd))
@@ -229,32 +277,39 @@ let next_state items (cmds: cmd) state : next_state =
         (List.map (fun (pre: Translated.term) -> pre.translation |> Result.get_ok) cmd_item.preconditions) @
       (translate_checks cmd_item.checks) in
         (*silly processing to get the check*)
-      let next = make_next cmd_item state cmd_ele.tname in
-      {args; pres; next})
-    cmds
+      let (used_post : bool I.t) = mk_used_posts cmd_item.postconditions in
+      (*initialize them all to false as all of the ensures for this cmd are initially unused*)
+      let (next, used_post)  = make_next_pure cmd_item state cmd_ele.targ_name used_post in
+      ({args; pres; next}, used_post))
+    cmds in
+unzip zipped 
 
 (*if it doesnt say pure assume it can raise*)
-let run items cmds = S.mapi
-    (fun cmd args ->
-    let cmd_item = find_value items cmd |> Option.get in (args, cmd_item.pure))
+let run items (cmds : cmd)  : run = S.mapi
+    (fun cmd (cmd_ele: cmd_ele) ->
+    let cmd_item = find_value items cmd |> Option.get in (cmd_ele.args, cmd_item.pure))
     cmds
 
 (*would be nice if you could warn the user if some postconds are not translated
 start here*)
-let postcond items cmds state : postcond =
+let postcond items (cmds : cmd) (used: (bool I.t) S.t) : postcond =
   S.mapi
-(fun cmd cmd_data ->
+(fun cmd (cmd_data: cmd_ele) ->
   let cmd_item = Option.get (find_value items cmd) in
   let args = cmd_data.args in
+  let ret = cmd_data.ret in
   let checks = translate_checks cmd_item.checks in
   let raises = [] in (*start here*)
- let postcond = List.filter (contains_ident ret_name) (*start here*)
-     (List.map (fun t -> t.translation) cmd_item.postconditions) in
+ let postcond = let used = S.find cmd used in
+   List.filter_map (fun (i, (t: term)) -> if (not (I.find i used))
+                     then Some (t.translation |> Result.get_ok)
+                         else None) (enum cmd_item.postconditions) in
    (*want the whole equals here
                                                            not just the rhs,
                                                            probably shouldnt use make_next*)
      (*need a conjunction of all the ensures with the result name on either side of the equals*)
-{args; checks; raises; postcond }
+let out : postcond_case = {args; ret; checks; raises; postcond } in
+  out
 )
 cmds 
 
@@ -264,9 +319,9 @@ let stm (driver : Drv.t) : Ast3.stm  =
   let state = state items in
   let arb_cmd = arb_cmd cmd in
   let init_state = init_state items state in
-  let next_state = next_state items cmd state in
+  let (next_state, used) = next_state items cmd state in
   let run = run items cmd in
-  let postcond = postcond items cmd state in
+  let postcond = postcond items cmd used in
   {module_name = driver.module_name; cmd; state; arb_cmd; init_state; next_state; run; postcond}
 
 

@@ -44,13 +44,17 @@ type term = {
 }
 [@@deriving sexp_of] *)
 
-type ocaml_var = {name : string; label : label; typ: typ}
+type ocaml_var = {name : string; label : arg_label; typ: typ}
 
 (*maps the name of the fn to its argument types and return types, and also the name of the
   special first argument which is always of type t
   (not included in the cmd type, etc)
 *)
-type cmd_ele = {targ_name: string; args: ocaml_var list; ret: ocaml_var }
+(*start here you should use the targ_name instead of s for the old state name*)
+(*ret is large list when tuple. what name does ortac use for the whole tuple?
+none, gospel makes you deconstruct the tuple
+*)
+type cmd_ele = {targ_name: string; args: ocaml_var list; ret: ocaml_var list }
 type cmd= cmd_ele S.t
 
 (*will get this from the models of t (sut)
@@ -89,11 +93,11 @@ type init_state = expression S.t
   for each function, <a list of the arguments>, <A list of all the requires and checks>,
   <a map of field name to the thing it is assigned to>
 *)
-type next_state_case = {args: arg list; pres: expression list; next: expression S.t} 
+type next_state_case = {args: ocaml_var list; pres: expression list; next: expression S.t} 
 type next_state = next_state_case S.t 
 
 (*command name -> arguments, can raise exn*)
-type run = (arg list * bool) S.t
+type run = (ocaml_var list * bool) S.t
 
 
 (*iff checks then raise invalid argument
@@ -105,10 +109,40 @@ for each fn
   the result in the ensures)
 *)
 type postcond_case =
-  {args: arg list; return: string;
+  {args: ocaml_var list;
+   ret: ocaml_var list;
    checks: expression list;
    raises: (string * expression) list; (*? is this the right type*)
-   postcond: expression list; (*need to conjoin all of these *) }
+   postcond: expression list; (*the expressions that go in here are all the ensures
+                              that have not already been used figuring out the state
+                              the ones that have already been used getting to this
+                              point are the ones to do with state.field =
+                              everything else should be in scope?
+if you were to write
+                                val get : t -> int -> int
+                                out = get s i
+                                ensures out = s.field1
+                                all the args are in scope and above is correct syntax for
+                                the state.
+                                i think gospel type checking should be sufficient to ensure
+                                that all the remaining preconditions are well typed.
+so, which functions "use" post conditions?
+                                just next_state. 
+
+                              *) }
+  (*if you wrote
+val get : t -> int -> int
+    out = get s i
+    s.field1 = out
+    this would break the next_state function generation because out is not in scope
+    need to check the rhs of all the next states does not use the return name.
+    ^ no way to get around writing the contains_ident function.
+    can i just run the ocaml typechecker on the = expression with out outside of scope?
+    how does the gospel typechecker check scoping <- LOOK IN HERE START HERE
+
+    that said all the ensures that aren't already used SHOULD go in the post condition
+    so i think this approach is still a good idea.
+  *)
 type postcond = postcond_case S.t
 
 type stm = {module_name : string;
