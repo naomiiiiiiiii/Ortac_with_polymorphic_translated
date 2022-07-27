@@ -33,8 +33,7 @@ let rec typ_of_type_ (error: string) (ty: type_)  =
   | _ -> raise (Failure "no type with multiple arguments supported")
 
 
-(*
-magic numbers*)
+(* magic numbers*)
 let mk_qcheck (typ: Ast3.typ) : expression =
   let loc = !Ast_helper.default_loc in
   let rec mk_qcheck_help typ = 
@@ -197,7 +196,8 @@ need to support old start here*)
 let get_field_rhs ?(error = "Unknown") (equations: term list) (field: string)
     (prefix: string) : int * expression  =
   let field = Printf.sprintf "%s.%s" prefix field in
-  ( match List.find_opt (fun (_, (term : term)) -> match term.translation with
+  ( match List.find_opt (fun (_, (term : term)) ->
+        match term.translation with
           Ok exp ->
           (* Printf.printf("lhs is: %s\n%!") (exp |> get_lhs |> Option.get); *)
           (get_lhs exp = Some field)
@@ -205,7 +205,8 @@ let get_field_rhs ?(error = "Unknown") (equations: term list) (field: string)
         | _ -> false 
       ) (enum equations) with (*found a term which sets the field name equal to something*)
       Some (i, term) -> (i, (term.translation |> Result.get_ok |> get_rhs_exn))
-    | None -> raise (Failure (Printf.sprintf "field %s undefined in %s" field error)))
+    | None ->
+      raise (Failure (Printf.sprintf "field %s undefined in %s" field error)))
 
 (*init sut is the only one which returns a state
 so to access the fields you do ret_name.fieldname

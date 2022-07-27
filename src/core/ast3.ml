@@ -19,6 +19,20 @@ from there turn into this.
 (*all the types that are supported for state fields *)
 
 (*need to change this to be the gospel ints*)
+
+(*150
+218
+270
+242
+
+  vs
+
+  500
+  270
+  111
+  333
+*)
+
 type typ =
   | Int
   | Integer

@@ -29,18 +29,16 @@ let rec typ_to_core_type (t : Ast3.typ) : core_type =
   ptyp_constr (t |> top_typ_to_str |> lident_dot)  (List.map typ_to_core_type (Ast3.get_typ_args t))
 
 
-
-
 (*how to get a core type out of a string?*)
-let mk_core_typ (arg : Ast3.arg) : core_type = typ_to_core_type arg.arg_type 
+let mk_core_typ (arg : Ast3.ocaml_var) : core_type = typ_to_core_type arg.typ
   (* [%type int][@subst let t : string = (type_to_string t)] *)
   (* [%type [%t typ_to_string arg.typ]] *)
 
 let mk_cmd (cmd : Ast3.cmd) : structure_item =
   let mk_variant (cmd : Ast3.cmd) =
-    Ptype_variant (List.map (fun (name, args) ->
+    Ptype_variant (List.map (fun (name, (cmd_ele : Ast3.cmd_ele)) ->
         constructor_declaration ~name:(noloc (String.capitalize_ascii name))
-          ~args:(Pcstr_tuple (List.map mk_core_typ args))
+          ~args:(Pcstr_tuple (List.map mk_core_typ cmd_ele.args))
           ~res: None)
       (S.bindings cmd)) in
   let pstr_type: rec_flag -> type_declaration list -> structure_item = pstr_type in
