@@ -34,18 +34,16 @@ let rec typ_of_type_ (error: string) (ty: type_)  =
 
 
 (* magic numbers*)
-let mk_qcheck (typ: Ast3.typ) : expression =
+let rec mk_qcheck (typ: Ast3.typ) : expression =
   let loc = !Ast_helper.default_loc in
-  let rec mk_qcheck_help typ = 
   match typ with
   | Int ->  [%expr frequency [(1, small_nat); (20, int)]]
   | Integer -> raise (Failure "cannot make generator for Gospel stdlib type Integer")
   | String -> [%expr frequency [(1, small_string); (20, string)]]
   | Bool -> [%expr bool]
   | Unit -> [%expr unit]
-  | List typ -> [%expr list [%e mk_qcheck_help typ]]
-  in
-  [%expr Gen.([%e mk_qcheck_help typ])]
+  | List typ -> [%expr list [%e mk_qcheck typ]]
+
 
 (* [%expr [%e raise Div]] *)
 let mk_ocaml_var (v: Translated.ocaml_var) : Ast3.ocaml_var =
@@ -74,7 +72,7 @@ let find_value items name =
 let cmd (items: Translated.structure_item list) : Ast3.cmd =
   (*is v an stm command candidate *)
  let is_stmable (v : Translated.value) =
-  (v.name <> "init_sut") && (List.length v.arguments >= 1) && ((List.hd v.arguments).type_.name = "t") &&
+  (v.name <> "Init_sut") && (List.length v.arguments >= 1) && ((List.hd v.arguments).type_.name = "t") &&
   (List.for_all (fun (ret : Translated.ocaml_var) -> ret.type_.name <> "t") v.returns)
  in
  let make_stmable (v: Translated.value) =
@@ -252,7 +250,7 @@ let mk_used_posts posts = List.fold_right (fun i acc -> I.add i false acc)
     (List.init (List.length posts) (fun i -> i)) I.empty
 
 let init_state (items: Translated.structure_item list) (state: state): init_state =
-  match find_value items "init_sut" with
+  match find_value items "Init_sut" with
     Some cmd_item -> assert (List.length cmd_item.returns = 1);
     make_next_pure cmd_item state (List.hd cmd_item.returns).name (mk_used_posts cmd_item.postconditions)
     |> fst
@@ -314,8 +312,14 @@ let out : postcond_case = {args; ret; checks; raises; postcond } in
 )
 cmds 
 
+
 let stm (driver : Drv.t) : Ast3.stm  =
-  let items = driver.translations in 
+  let capitalize items = List.map (fun item ->
+      match item with
+      Value v -> Value {v with name = String.capitalize_ascii v.name}
+      | _ -> item
+    ) items in
+  let items = capitalize driver.translations in 
   let cmd = cmd items in
   let state = state items in
   let arb_cmd = arb_cmd cmd in

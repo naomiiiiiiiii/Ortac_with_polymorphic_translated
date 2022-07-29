@@ -8,8 +8,6 @@ module S = Map.Make (String)
 module ISet = Set.Make (Int)
 
 
-
-
 let top_typ_to_str t = match t with
   | Integer -> "Ortac_runtime.Z.t"
   | Int -> "int"
@@ -40,7 +38,7 @@ let fake_loc : Location.t =
 let mk_cmd (cmd : Ast3.cmd) : structure_item =
   let mk_variant (cmd : Ast3.cmd) =
     Ptype_variant (List.map (fun (name, (cmd_ele : Ast3.cmd_ele)) ->
-        constructor_declaration ~name:(noloc (String.capitalize_ascii name))
+        constructor_declaration ~name:(noloc name)
           ~args:(Pcstr_tuple (List.map mk_core_typ cmd_ele.args))
           ~res: None)
       (S.bindings cmd)) in
@@ -77,33 +75,19 @@ let mk_cmd (cmd : Ast3.cmd) : structure_item =
 
 
 
-(*need to generate the maps you need first
-then just write mapn *)
-(*Set -> (int: expression) have 
-Set -> [map, (fun i -> Set i), int ] want 
-*)
-(*start here make it more likely to feed the state into a command when the types match*)
 
 
-let map5 f gen1 gen2 gen3 gen4 gen5 =
-let g (one, two, three) four five = f one two three four five in
-map3 g (map3 triple gen1 gen2 gen3) gen4 gen5
-let test = ppat_tuple
 
-(*
-let econcat e1 e2 = [%expr [%e e1] [%e e2]]
-let eflatten (l : expression list): expression = List.fold_right (fun e acc -> econcat e acc) l
-   (evar " ") *)
 
-let map_name n = "map" ^ (Int.to_string n)
+let map_name n = if (n <= 0) then raise (Failure "<= 0 in map_name");
+  if (n = 1) then "map" else "map" ^ (Int.to_string n)
 
-ppat_tuple
 
 let mk_fn (arg_names : string list list) (body: expression) : expression =
   List.fold_right (fun arg_tuple acc ->
       pexp_fun Nolabel None (ppat_tuple (List.map pvar arg_tuple)) acc) arg_names body
 
-let mk_fn_single args =
+let mk_fn_single (args : string list) =
   mk_fn (List.map (fun x -> [x]) args)
 
 let mk_arg_names n prefix = List.init n (fun i -> prefix^ (Int.to_string i))
@@ -137,7 +121,7 @@ let mk_map_body fn args : expression =
     mk_app small_map ((evar "g")::args_body) in
   [%expr let [%pat [%p pstring "g"]] = [%e g] in [%e body] ]
 
-let mkmap n rem : expression =
+let mk_map n rem : expression =
   let name : string = map_name n in
   let rhs : expression = if (n < 4) then [%expr [%e evar name]] else
       let (arg_names : string list) = (mk_arg_names n "gen") in
@@ -148,6 +132,19 @@ let mkmap n rem : expression =
   [%expr let [%pat [%p pvar name]] = [%e rhs] in [%e rem]]
 
 
+
+(* ask jan this fn is actually well defined right?
+   if (List.length l <= 3) then [] else
+   let threed = collect_by_threes l in
+   if (List.length threed <= 3) then [] (*no additional maps needed*)
+   else (List.length threed)::(maps_needed threed) *)
+
+let rec maps_needed i acc : ISet.t =
+  if (i <= 9) then acc else
+    let threes = i / 3 in (* this many units. at most one extra group because if there are two
+                           extra they can be combined with map3 **)
+    let toplevel_groups = threes + (if (i mod 3) = 0 then 0 else 1) in
+    ISet.add toplevel_groups (maps_needed toplevel_groups acc)
 
 (* 1) first find out which maps are needed. an int list.
    2) make the body using those maps
@@ -161,35 +158,37 @@ let mkmap n rem : expression =
 
 *)
 
-(*how many map fns are needed to make a map that takes n generators*)
 
-unit unit one one
-
-
-let rec maps_needed i : int list =
-  if (i <= 9) then  [] else
-    let threes = i / 3 in (* this many units. at most one extra group because if there are two
-                           extra they can be combined with map3 **)
-    let toplevel_groups = threes + (if (i mod 3) = 0 then 0 else 1) in
-    toplevel_groups::(maps_needed toplevel_groups)
-
-
-  (* ask jan this fn is actually well defined right?
-  if (List.length l <= 3) then [] else
-    let threed = collect_by_threes l in
-    if (List.length threed <= 3) then [] (*no additional maps needed*)
-    else (List.length threed)::(maps_needed threed) *)
-
-(*      9/3 is 3. fine 
- map3 g (map3 triple one two three) (map3 triple four five six) (map3 triple seven eight nine)
-
-
- map4 g (map3 triple one two three) (map3 triple four five six)
-(map3 triple seven eight nine) ten
-
-        in which_maps_help (ISet.of_list [1;2;3]) *)
-
+(*start here make it more likely to feed the state into a command when the types match*)
 let mk_arb_cmd (cmd: Ast3.cmd) (arb_cmd: Ast3.arb_cmd) =
+  let maps_needed = S.fold (fun _ gens acc -> maps_needed (List.length gens) acc) arb_cmd
+ISet.empty
+  in
+  (*Some (map, fn, gen args) if there are args
+    None otherwise*)
+  let mk_arb_cmd_body (cmd : Ast3.cmd) arb_cmd =
+    let for_oneof : (expression * expression * expression list) option S.t =
+      S.mapi (fun cmd_name gens ->
+          if (List.length gens) = 0 then None else 
+            let map = evar (map_name (List.length gens)) in
+            let args : string list = (List.map (fun x -> x.name) (S.find cmd_name cmd).args) in
+            let constr_args : expression = pexp_tuple (List.map evar args) 
+            in
+            let fn : expression =  mk_fn_single args (pexp_construct (lident cmd_name)
+                                                        (Some constr_args)
+                                                     ) in
+            Some (map, fn, gens)
+        ) arb_cmd in
+    let for_oneof :expression list = List.map (fun (cmd, gen) -> match gen with
+        |  None -> [%expr return [%e evar cmd]]
+        | Some (map, fn, gens) ->
+          pexp_apply map ((Nolabel, fn)::(List.map (fun e -> (Nolabel, e)) gens)))
+        (S.bindings for_oneof) in
+    [%expr QCheck.make ~print:show_cmd Gen.(oneof [%e elist for_oneof ])] in
+  let body : expression = ISet.fold mk_map maps_needed (mk_arb_cmd_body cmd arb_cmd) (*add all the maps on top of the body*) in
+  [%stri let arb_cmd _s = [%e body]]
+
+
 
 
 
@@ -216,5 +215,5 @@ let structure runtime (stm : Ast3.stm) : Parsetree.structure_item list =
   let open1 = open_infos ~expr:(pmod_ident (lident "QCheck")) ~override:Fresh |> pstr_open in
   let open2 = open_infos ~expr:(pmod_ident (lident "STM")) ~override:Fresh |> pstr_open in
   let cmd = mk_cmd stm.cmd in
-  (*  let arb_cmd = mk_arb_cmd stm.arb_cmd in *)
- [incl;second; open1; open2; cmd]
+  let arb_cmd = mk_arb_cmd stm.cmd stm.arb_cmd in
+ [incl;second; open1; open2; cmd; arb_cmd]
