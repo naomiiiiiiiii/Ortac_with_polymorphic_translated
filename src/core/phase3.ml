@@ -109,7 +109,7 @@ let mk_map_body fn args : expression =
   let args_collect = collect_by_threes g_args in
   let args_body : (string option * string list) list = List.map (fun l -> match List.length l with
       | 1 -> (None, l)
-      | 2 -> (Some (map_name 2), "double"::l)
+      | 2 -> (Some (map_name 2), "tuple"::l)
       | 3 -> (Some (map_name 3), "triple":: l)
       | _ -> raise (Failure "incorrect collect by 3s")
     ) args_collect in
@@ -119,17 +119,19 @@ let mk_map_body fn args : expression =
     ) args_body) in
   let body : expression = let small_map : expression = evar (map_name (List.length g_args)) in
     mk_app small_map ((evar "g")::args_body) in
-  [%expr let [%pat [%p pstring "g"]] = [%e g] in [%e body] ]
+  [%expr let [%p pvar "g"] = [%e g] in [%e body] ]
 
+
+(*need to add the definition of tuple and triple to here*)
 let mk_map n rem : expression =
   let name : string = map_name n in
-  let rhs : expression = if (n < 4) then [%expr [%e evar name]] else
+  let rhs : expression = if (n <= 3) then [%expr [%e evar name]] else
       let (arg_names : string list) = (mk_arg_names n "gen") in
       let fn_arg = "f" in
       let body : expression = mk_map_body fn_arg arg_names in
       mk_fn_single (fn_arg::arg_names) body
   in
-  [%expr let [%pat [%p pvar name]] = [%e rhs] in [%e rem]]
+  [%expr let [%p pvar name] = [%e rhs] in [%e rem]]
 
 
 
@@ -139,12 +141,18 @@ let mk_map n rem : expression =
    if (List.length threed <= 3) then [] (*no additional maps needed*)
    else (List.length threed)::(maps_needed threed) *)
 
-let rec maps_needed i acc : ISet.t =
-  if (i <= 9) then acc else
-    let threes = i / 3 in (* this many units. at most one extra group because if there are two
-                           extra they can be combined with map3 **)
-    let toplevel_groups = threes + (if (i mod 3) = 0 then 0 else 1) in
-    ISet.add toplevel_groups (maps_needed toplevel_groups acc)
+(*which maps need to be defined to make a mapn
+if tuple needs to be defined, if triple needs to be defined*)
+let rec maps_needed n acc : ISet.t * bool * bool =
+  if (n <= 3) then acc else
+    let threes = n / 3 in (*if youre dividing it into 3s then you must use triple to combine the 3-groups*)
+    (* this many units. at most one extra group because if there are two
+                           extra they can be combined with map2,
+     and the function writing the definition of map knows this**)
+    let toplevel_groups = threes + (if (n mod 3) = 0 then 0 else 1) in
+    let (acc, tuple, _) = maps_needed toplevel_groups acc in
+    (ISet.add n acc, (n mod 3) = 2 || tuple, true)
+    (*triple must be true since you've divided into 3s *)
 
 (* 1) first find out which maps are needed. an int list.
    2) make the body using those maps
@@ -159,10 +167,19 @@ let rec maps_needed i acc : ISet.t =
 *)
 
 
+let add_tuple b body = if b then
+    let tuple = mk_fn_single ["a"; "b"] [%expr (a, b)] in
+    [%expr let tuple = [%e tuple] in [%e body]] else body
+
+let add_triple b body = if b then
+    let triple = mk_fn_single ["a"; "b"; "c"] [%expr (a, b, c)] in
+    [%expr let triple = [%e triple] in [%e body]] else body
+
+
 (*start here make it more likely to feed the state into a command when the types match*)
 let mk_arb_cmd (cmd: Ast3.cmd) (arb_cmd: Ast3.arb_cmd) =
-  let maps_needed = S.fold (fun _ gens acc -> maps_needed (List.length gens) acc) arb_cmd
-ISet.empty
+  let (maps_needed, tuple, triple) =
+    S.fold (fun _ gens acc -> maps_needed (List.length gens) acc) arb_cmd (ISet.empty, false, false)
   in
   (*Some (map, fn, gen args) if there are args
     None otherwise*)
@@ -185,7 +202,13 @@ ISet.empty
           pexp_apply map ((Nolabel, fn)::(List.map (fun e -> (Nolabel, e)) gens)))
         (S.bindings for_oneof) in
     [%expr QCheck.make ~print:show_cmd Gen.(oneof [%e elist for_oneof ])] in
-  let body : expression = ISet.fold mk_map maps_needed (mk_arb_cmd_body cmd arb_cmd) (*add all the maps on top of the body*) in
+  Printf.printf "size of maps needed is: %s\n%!" (maps_needed |> ISet.cardinal |> Int.to_string);
+  let body : expression = ISet.fold mk_map maps_needed (mk_arb_cmd_body cmd arb_cmd)
+  (*add all the maps on top of the body*)
+                        |> add_tuple tuple (*add tuple definition*)
+                        |> add_triple triple (*add triple definition*)
+
+  in
   [%stri let arb_cmd _s = [%e body]]
 
 
