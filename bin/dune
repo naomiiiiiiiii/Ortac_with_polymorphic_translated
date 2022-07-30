@@ -1,9 +1,10 @@
 (executables
- (names myexe)
+ (names arbcmd_test)
  (preprocess
   (pps ppx_jane ppx_deriving.show))
  (libraries
- ocaml-compiler-libs.shadow  
+qcheck 
+ocaml-compiler-libs.shadow  
 cmdliner
   fmt
   fmt.cli
@@ -18,5 +19,7 @@ ortac_stm
 pp_loc
 ppx_jane
   ppxlib.ast)
-(modules_without_implementation atom)
 )
+(env
+  (dev
+    (flags (:standard -w -32))))

@@ -79,8 +79,9 @@ let mk_cmd (cmd : Ast3.cmd) : structure_item =
 
 
 
-let map_name n = if (n <= 0) then raise (Failure "<= 0 in map_name");
-  if (n = 1) then "map" else "map" ^ (Int.to_string n)
+let map_name n = let prefix = if (n <= 3) then "Gen." else "" in
+  if (n <= 0) then raise (Failure "<= 0 in map_name");
+  if (n = 1) then prefix^"map" else prefix^"map" ^ (Int.to_string n)
 
 
 let mk_fn (arg_names : string list list) (body: expression) : expression =
@@ -102,22 +103,23 @@ let mk_app (fn : expression) (args : expression list) = pexp_apply fn
 
 
 let mk_map_body fn args : expression =
-  let g_args : string list = mk_arg_names (List.length args) "arg" in
-  let g_args_collect : string list list = collect_by_threes g_args in
-  let g_body : expression = mk_app (evar fn) (List.map evar g_args) in
-  let g : expression = mk_fn g_args_collect g_body in
-  let args_collect = collect_by_threes g_args in
+  let fn_args : string list = mk_arg_names (List.length args) "arg" in
+  let g_body : expression = mk_app (evar fn) (List.map evar fn_args) in
+  let g_args : string list list = collect_by_threes fn_args in
+  let g : expression = mk_fn g_args g_body in
+  let args_body = collect_by_threes args in
   let args_body : (string option * string list) list = List.map (fun l -> match List.length l with
       | 1 -> (None, l)
       | 2 -> (Some (map_name 2), "tuple"::l)
       | 3 -> (Some (map_name 3), "triple":: l)
       | _ -> raise (Failure "incorrect collect by 3s")
-    ) args_collect in
-  let args_body : expression list = (List.map (fun (fn_opt, args) ->
+    ) args_body in
+  let args_body : expression list = List.map (fun (fn_opt, args) ->
       match fn_opt with | Some fn ->  mk_app (evar fn) (List.map evar args)
                         | None -> assert (List.length args = 1); evar (List.hd args)
-    ) args_body) in
-  let body : expression = let small_map : expression = evar (map_name (List.length g_args)) in
+    ) args_body in
+  let body : expression =
+    let small_map : expression = evar (map_name (List.length g_args)) in
     mk_app small_map ((evar "g")::args_body) in
   [%expr let [%p pvar "g"] = [%e g] in [%e body] ]
 
@@ -202,7 +204,6 @@ let mk_arb_cmd (cmd: Ast3.cmd) (arb_cmd: Ast3.arb_cmd) =
           pexp_apply map ((Nolabel, fn)::(List.map (fun e -> (Nolabel, e)) gens)))
         (S.bindings for_oneof) in
     [%expr QCheck.make ~print:show_cmd Gen.(oneof [%e elist for_oneof ])] in
-  Printf.printf "size of maps needed is: %s\n%!" (maps_needed |> ISet.cardinal |> Int.to_string);
   let body : expression = ISet.fold mk_map maps_needed (mk_arb_cmd_body cmd arb_cmd)
   (*add all the maps on top of the body*)
                         |> add_tuple tuple (*add tuple definition*)
