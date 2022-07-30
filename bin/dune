@@ -1,7 +1,7 @@
 (executables
- (names arbcmd_test)
+ (names myexe)
  (preprocess
-  (pps ppx_jane ppx_deriving.show))
+  (pps ppx_jane ppx_deriving.show ppxlib.metaquot))
  (libraries
 qcheck 
 ocaml-compiler-libs.shadow  
@@ -20,6 +20,3 @@ pp_loc
 ppx_jane
   ppxlib.ast)
 )
-(env
-  (dev
-    (flags (:standard -w -32))))
