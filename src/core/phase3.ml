@@ -12,7 +12,10 @@ module ISet = Set.Make (Int)
 let typ_to_str t = match t with
   | Integer -> "Ortac_runtime.Z.t"
   | Int -> "int"
-  | _ -> "start here"
+  | String -> "string"
+  | Bool -> "bool"
+  | Unit -> "unit"
+  | List _typ -> "list"
 let rec typ_to_core_type (t : Ast3.typ) : core_type =
   ptyp_constr (t |> typ_to_str |> lident)  (List.map typ_to_core_type (Ast3.get_typ_args t))
 let mk_core_typ (arg : Ast3.ocaml_var) : core_type = typ_to_core_type arg.typ
@@ -247,23 +250,29 @@ let mk_next_state (cmd: Ast3.cmd) (next_state : Ast3.next_state) (state : state)
     S.map (fun (nsc : next_state_case) ->
         (*if all the fields are set then no need to use original*)
         let og = if S.cardinal nsc.next = S.cardinal state then None else (Some state_var) in
-        [%expr if [%e conjoin nsc.pres] then [%e mk_record ~og nsc.next]
+        let record = mk_record ~og nsc.next in
+        match nsc.pres with
+          [] -> record (*no preconditions so automatically move to next state*)
+        | _::_ -> [%expr if [%e conjoin nsc.pres] then
+            [%e record]
           else [%e state_var]
         ]
       )
       next_state in
   let body = pexp_match cmd_var (mk_cmd_cases cmd rhs) in
-  [%stri let next_state c s = [%e body]]
+  [%stri let next_state [%p pvar cmd_name] [%p pvar state_name] = [%e body]]
 
 
 
-let mk_precond (cmd: Ast3.cmd) (precond : Ast3.precond) ~cmd_name:cmd_name =
+let mk_precond (cmd: Ast3.cmd) (precond : Ast3.precond)
+~state_name:state_name
+    ~cmd_name:cmd_name =
  (* let patterns : pattern list = List.map (fun cmd cmd_ele ->
     )
       (S.bindings cmd) *)
   let precond : expression S.t = S.map conjoin precond in 
     let body = pexp_match (evar cmd_name) (mk_cmd_cases cmd precond) in
-  [%stri let precond c s = [%e body]]
+  [%stri let precond [%p pvar cmd_name] [%p pvar state_name] = [%e body]]
 
 
 
@@ -289,12 +298,16 @@ let structure runtime (stm : Ast3.stm) : Parsetree.structure_item list =
                                    ~manifest:(Some (ptyp_constr (lident (stm.module_name ^ ".t")) []))] in
   let state = mk_state stm.state in
   let cmd = mk_cmd stm.cmd in
+  let state_name = stm.state_name in
+  let cmd_name = stm.cmd_name in
   let init_sut = [%stri let init_sut = [%e evar (stm.module_name ^ ".init_sut")]] in
   let  cleanup = [%stri let cleanup _ = () ] in 
   let arb_cmd = mk_arb_cmd stm.cmd stm.arb_cmd in
-  let next_state = mk_next_state stm.cmd stm.next_state stm.state ~state_name:stm.state_name ~cmd_name:stm.cmd_name in
-  let precond = mk_precond stm.cmd stm.precond ~cmd_name:stm.cmd_name in
- [incl;second; open1; open2; sut ; state; cmd; init_sut; cleanup; arb_cmd;
+  let next_state = mk_next_state stm.cmd stm.next_state stm.state
+      ~state_name ~cmd_name in
+  let precond = mk_precond stm.cmd stm.precond
+      ~state_name ~cmd_name in
+  [incl;second; open1; open2; sut ; state; cmd; init_sut; cleanup; arb_cmd;
 next_state;
   precond]
 

@@ -27,7 +27,7 @@ let rec typ_of_type_ (error: string) (ty: type_)  =
     | _ -> unsupported_type s 
   in
   match ty.args with
-  | [] -> Printf.printf "entering base typ with %s\n%!" ty.name; base_typ_of_string ty.name
+  | [] -> base_typ_of_string ty.name
   | [arg] -> (match ty.name with
         "list" -> List (typ_of_type_ error arg)
       | _ -> unsupported_type ty.name)
@@ -141,6 +141,7 @@ let rec contains_ident ident exp =
                                 (contains_ident exp)
   | Pexp_function cases -> *)
 
+(*start here is the = the correct = with Zarith?*)
 let get_sides  (exp: expression) : (string * expression) option  =
  let rec get_ident (exp: expression) : string option  =
    let rec get_ident_li (li : longident) = match li with
@@ -331,7 +332,7 @@ let stm (driver : Drv.t) : Ast3.stm  =
     ) items in
   let items = capitalize driver.translations in 
   let cmd_name = Fmt.str "%a" Ident.pp (Ident.create "c" ~loc) in
-  let  state_name = Fmt.str "%a" Ident.pp (Ident.create "c" ~loc) in
+  let state_name = Fmt.str "%a" Ident.pp (Ident.create "s" ~loc) in
   let cmd = cmd items in
   let state = state items in
   let arb_cmd = arb_cmd cmd in
