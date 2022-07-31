@@ -289,6 +289,13 @@ let run items (cmds : cmd)  : run = S.mapi
     let cmd_item = find_value items cmd |> Option.get in (cmd_ele.args, cmd_item.pure))
     cmds
 
+let precond items cmds : precond = S.mapi
+                                     (fun cmd _ ->
+let cmd_item = find_value items cmd |> Option.get in
+List.map (fun (term: Translated.term) -> term.translation |> Result.get_ok)
+  cmd_item.preconditions
+      ) cmds
+
 (*would be nice if you could warn the user if some postconds are not translated
 start here*)
 let postcond items (cmds : cmd) (used: (bool I.t) S.t) : postcond =
@@ -326,8 +333,10 @@ let stm (driver : Drv.t) : Ast3.stm  =
   let init_state = init_state items state in
   let (next_state, used) = next_state items cmd state in
   let run = run items cmd in
+  let precond = precond items cmd in
   let postcond = postcond items cmd used in
-  {module_name = driver.module_name; cmd; state; arb_cmd; init_state; next_state; run; postcond}
+  {module_name = driver.module_name; cmd; state; arb_cmd; init_state;
+   next_state; run; precond; postcond}
 
 
 

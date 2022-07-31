@@ -114,6 +114,10 @@ type next_state = next_state_case S.t
 type run = (ocaml_var list * bool) S.t
 
 
+(*all the requires for a simple conjoining*)
+type precond = expression list S.t 
+
+
 (*iff checks then raise invalid argument
 iff a raises then raise that Exn (dont support this for right now)
 Otherwise need to look in the ensures for all conditions to do with result _op _ _rhs_
@@ -166,13 +170,18 @@ type stm = {module_name : string;
             init_state: init_state;
             next_state: next_state;
             run: run;
+            precond : precond;
             postcond: postcond
            }
 
 (*assumptions:
   1. the system under test is called 't' in the gospel file
-  2. all of the functions take values of base types as arguments
-  3. system under test*)
+  2. all of the functions in the file have types of the form
+  t -> basic_type ... -> basic_type where basic_type is a type
+  with a generator in QCheck
+  3. there is a function init_sut : () -> t
+4. none of the conditions can refer to sut : t directly.
+they can only refer to the FIELDS of sut. start here check this. *)
 
 
 (*where to put the requires? in the precondition? *)

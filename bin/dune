@@ -1,5 +1,5 @@
 (executables
- (names myexe)
+ (names precond_test)
  (preprocess
   (pps ppx_jane ppx_deriving.show ppxlib.metaquot))
  (libraries
@@ -20,3 +20,6 @@ pp_loc
 ppx_jane
   ppxlib.ast)
 )
+(env
+  (dev
+    (flags (:standard -w -27 -w -32 -w -34))))

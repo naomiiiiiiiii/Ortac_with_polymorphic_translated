@@ -217,9 +217,24 @@ let mk_arb_cmd (cmd: Ast3.cmd) (arb_cmd: Ast3.arb_cmd) =
 
 
 
-
-
-
+let mk_precond (cmd: Ast3.cmd) (precond : Ast3.precond) =
+ (* let patterns : pattern list = List.map (fun cmd cmd_ele ->
+    )
+      (S.bindings cmd) *)
+  let precond : expression S.t = S.map (fun requires -> match requires with
+         | [] -> [%expr true]
+         | r::rs -> List.fold_right (fun r acc ->
+             [%expr [%e r] && [%e acc]]) rs r) precond in
+  let cases = List.map (fun (cmd, (cmd_ele : Ast3.cmd_ele)) ->
+    let pattern = 
+      ppat_construct (lident cmd) (match cmd_ele.args with
+          | [] -> None
+          | _::_ as args ->
+            Some (ppat_tuple (List.map (fun arg -> pvar arg.name) args) )) in
+      case ~lhs:pattern ~guard:None ~rhs:(S.find cmd precond) )
+    (S.bindings cmd) in
+  let body = pexp_match (evar "c") cases in 
+  [%stri let precond c s = [%e body]]
 
 
 
@@ -246,5 +261,6 @@ let structure runtime (stm : Ast3.stm) : Parsetree.structure_item list =
       ~kind:Ptype_abstract ~private_:Public
       ~manifest:(Some (ptyp_constr (lident (stm.module_name ^ ".t")) []))] in
   let arb_cmd = mk_arb_cmd stm.cmd stm.arb_cmd in
- [incl;second; open1; open2; cmd; state; sut; arb_cmd]
+  let precond = mk_precond stm.cmd stm.precond in
+ [incl;second; open1; open2; cmd; state; sut; arb_cmd; precond]
 
