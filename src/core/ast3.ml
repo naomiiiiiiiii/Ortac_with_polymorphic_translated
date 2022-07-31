@@ -107,7 +107,7 @@ type init_state = expression S.t
   for each function, <a list of the arguments>, <A list of all the requires and checks>,
   <a map of field name to the thing it is assigned to>
 *)
-type next_state_case = {args: ocaml_var list; pres: expression list; next: expression S.t} 
+type next_state_case = { pres: expression list; next: expression S.t} 
 type next_state = next_state_case S.t 
 
 (*command name -> arguments, can raise exn*)

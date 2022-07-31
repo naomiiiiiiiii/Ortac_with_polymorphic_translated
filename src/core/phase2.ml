@@ -220,10 +220,10 @@ wait lol**)
 
 let make_next_pure (cmd_item: Translated.value) (state: state) (prefix: string) (used : bool I.t) :
   expression S.t * bool I.t =
-  let loc = !Ast_helper.default_loc in (*what is this loc start here *)
   S.fold 
     (fun field _ (next_state, used) -> 
-       if cmd_item.pure then (S.add field [%expr s.([%e (evar field)]) ] next_state, used)
+       if cmd_item.pure then 
+         (S.add field [%expr [%e evar ("s." ^ field)]] next_state, used)
        else let (index_used, rhs) = get_field_rhs ~error:cmd_item.name cmd_item.postconditions field prefix in
          assert(I.find index_used used = false);
         (S.add field rhs next_state, I.add index_used true used)
@@ -267,7 +267,6 @@ next_state items cmds state = (states, used)
 let next_state items (cmds: cmd) state : next_state * ((bool I.t) S.t)=
   let unzip (m : 'a S.t) = (S.map fst m, S.map snd m) in
 let zipped =   S.mapi (fun cmd (cmd_ele : cmd_ele) ->
-      let args = cmd_ele.args in
       let cmd_item = (match (find_value items cmd) with
           None -> raise (Failure ("could not find " ^ cmd))
           | Some cmd_item -> cmd_item)
@@ -279,7 +278,7 @@ let zipped =   S.mapi (fun cmd (cmd_ele : cmd_ele) ->
       let (used_post : bool I.t) = mk_used_posts cmd_item.postconditions in
       (*initialize them all to false as all of the ensures for this cmd are initially unused*)
       let (next, used_post)  = make_next_pure cmd_item state cmd_ele.targ_name used_post in
-      ({args; pres; next}, used_post))
+      ({pres; next}, used_post))
     cmds in
 unzip zipped 
 

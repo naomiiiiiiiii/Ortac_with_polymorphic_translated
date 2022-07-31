@@ -1,5 +1,5 @@
 (executables
- (names precond_test)
+ (names nexstate_test)
  (preprocess
   (pps ppx_jane ppx_deriving.show ppxlib.metaquot))
  (libraries

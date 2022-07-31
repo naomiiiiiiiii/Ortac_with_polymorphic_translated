@@ -32,33 +32,35 @@ match acc with
   None -> Some (Lident name)
   | Some li -> Some (Ldot (li, name))) None names |> Option.get |> noloc
 
-let fake_loc : Location.t =
+let loc : Location.t =
   let fake_pos : Lexing.position = {pos_fname = "fake"; pos_lnum = (-1); pos_bol = (-1); pos_cnum = (-1) } in
   {loc_start = fake_pos; loc_end = fake_pos; loc_ghost = true }
 
-let show_attribute : attribute = {attr_name = (noloc "deriving");
+let show_attribute : attribute =
+  let loc = !Ast_helper.default_loc in (*what is this loc start here *)
+  {attr_name = (noloc "deriving");
                          attr_payload =
                            PStr
                              [{pstr_desc =
                                  Pstr_eval
                                    ({pexp_desc =
                                        Pexp_apply
-                                         ({pexp_desc = Pexp_ident {txt = Lident "show"; loc = fake_loc};
-                                           pexp_loc_stack = []; pexp_attributes = []; pexp_loc = fake_loc},
+                                         ({pexp_desc = Pexp_ident {txt = Lident "show"; loc};
+                                           pexp_loc_stack = []; pexp_attributes = []; pexp_loc = loc},
                                           [(Nolabel,
                                             {pexp_desc =
                                                Pexp_record
-                                                 ([({txt = Lident "with_path"; loc = fake_loc},
+                                                 ([({txt = Lident "with_path"; loc},
                                                     {pexp_desc =
-                                                       Pexp_construct ({txt = Lident "false"; loc = fake_loc}, None);
-                                                     pexp_loc_stack = []; pexp_attributes = []; pexp_loc = fake_loc})],
+                                                       Pexp_construct ({txt = Lident "false"; loc}, None);
+                                                     pexp_loc_stack = []; pexp_attributes = []; pexp_loc = loc})],
                                                   None);
-                                             pexp_loc_stack = []; pexp_attributes = []; pexp_loc = fake_loc})]);
-                                     pexp_loc_stack = []; pexp_attributes = []; pexp_loc = fake_loc},
+                                             pexp_loc_stack = []; pexp_attributes = []; pexp_loc = loc})]);
+                                     pexp_loc_stack = []; pexp_attributes = []; pexp_loc = loc},
                                     []);
-                               pstr_loc = fake_loc;
+                               pstr_loc = loc;
                               }];
-                                    attr_loc = fake_loc
+                                    attr_loc = loc
                                    } 
 
 let mk_fn (arg_names : string list list) (body: expression) : expression =
@@ -72,7 +74,13 @@ let mk_arg_names n prefix = List.init n (fun i -> prefix^ (Int.to_string i))
 let mk_app (fn : expression) (args : expression list) = pexp_apply fn
     (List.map (fun arg -> (Nolabel, arg)) args)
 
+let conjoin (exps: expression list) =  match exps with
+  | [] -> [%expr true]
+  | r::rs -> List.fold_right (fun r acc ->
+           [%expr [%e r] && [%e acc]]) rs r
 
+let mk_record ?(og = None) (fields : expression S.t)  =
+  pexp_record (List.map (fun (name, exp) -> (lident name, exp)) (S.bindings fields)) og 
 
 (*map helpers*)
 let map_name n = let prefix = if (n <= 3) then "Gen." else "" in
@@ -146,6 +154,16 @@ let rec maps_needed n acc : ISet.t * bool * bool =
 
 
 (*the functions*)
+let mk_cmd_cases (cmd : Ast3.cmd) (rhs : expression S.t) =
+  List.map (fun (cmd, (cmd_ele : Ast3.cmd_ele)) ->
+      let pattern = 
+        ppat_construct (lident cmd) (match cmd_ele.args with
+            | [] -> None
+            | _::_ as args ->
+              Some (ppat_tuple (List.map (fun arg -> pvar arg.name) args) )) in
+      case ~lhs:pattern ~guard:None ~rhs:(S.find cmd rhs) )
+    (S.bindings cmd)
+
 let mk_cmd (cmd : Ast3.cmd) : structure_item =
   let mk_variant (cmd : Ast3.cmd) =
     Ptype_variant (List.map (fun (name, (cmd_ele : Ast3.cmd_ele)) ->
@@ -161,11 +179,11 @@ let mk_cmd (cmd : Ast3.cmd) : structure_item =
 
 
 let mk_state (state: Ast3.state): structure_item  =
-  let mk_record state = Ptype_record (List.map
+  let mk_record_typ state = Ptype_record (List.map
       (fun (name, typ) -> label_declaration ~name:(noloc name) ~mutable_:Immutable
 ~type_:(typ_to_core_type typ)) (S.bindings state)) in     
   let td = type_declaration ~name:(noloc "state") ~params:[] ~cstrs:[]
-      ~kind:(mk_record state) ~private_:Public ~manifest:None in
+      ~kind:(mk_record_typ state) ~private_:Public ~manifest:None in
   pstr_type Recursive [td]
 
 (* 1) first find out which maps are needed. an int Set.
@@ -216,24 +234,34 @@ let mk_arb_cmd (cmd: Ast3.cmd) (arb_cmd: Ast3.arb_cmd) =
   [%stri let arb_cmd _s = [%e body]]
 
 
+(*start here can't use the variable s as could be bound for the arguments
+ortac does something about this where it doesnt let you reuse variable names for args
+globally*)
+  (*start here make it support old and some of the fields not being listed,
+  only the ones which are modified are listed*)
+let mk_next_state (cmd: Ast3.cmd) (next_state : Ast3.next_state) (state : state) =
+  let state_var = evar "s" in
+  let cmd_var = evar "c" in
+  let rhs : expression S.t =
+    S.map (fun (nsc : next_state_case) ->
+        (*if all the fields are set then no need to use original*)
+        let og = if S.cardinal nsc.next = S.cardinal state then None else (Some state_var) in
+        [%expr if [%e conjoin nsc.pres] then [%e mk_record ~og nsc.next]
+          else [%e state_var]
+        ]
+      )
+      next_state in
+  let body = pexp_match cmd_var (mk_cmd_cases cmd rhs) in
+  [%stri let next_state c s = [%e body]]
+
+
 
 let mk_precond (cmd: Ast3.cmd) (precond : Ast3.precond) =
  (* let patterns : pattern list = List.map (fun cmd cmd_ele ->
     )
       (S.bindings cmd) *)
-  let precond : expression S.t = S.map (fun requires -> match requires with
-         | [] -> [%expr true]
-         | r::rs -> List.fold_right (fun r acc ->
-             [%expr [%e r] && [%e acc]]) rs r) precond in
-  let cases = List.map (fun (cmd, (cmd_ele : Ast3.cmd_ele)) ->
-    let pattern = 
-      ppat_construct (lident cmd) (match cmd_ele.args with
-          | [] -> None
-          | _::_ as args ->
-            Some (ppat_tuple (List.map (fun arg -> pvar arg.name) args) )) in
-      case ~lhs:pattern ~guard:None ~rhs:(S.find cmd precond) )
-    (S.bindings cmd) in
-  let body = pexp_match (evar "c") cases in 
+  let precond : expression S.t = S.map conjoin precond in 
+    let body = pexp_match (evar "c") (mk_cmd_cases cmd precond) in
   [%stri let precond c s = [%e body]]
 
 
@@ -255,12 +283,17 @@ let structure runtime (stm : Ast3.stm) : Parsetree.structure_item list =
   in
   let open1 = open_infos ~expr:(pmod_ident (lident "QCheck")) ~override:Fresh |> pstr_open in
   let open2 = open_infos ~expr:(pmod_ident (lident "STM")) ~override:Fresh |> pstr_open in
-  let cmd = mk_cmd stm.cmd in
-  let state = mk_state stm.state in
   let sut = pstr_type Recursive [type_declaration ~name:(noloc "sut") ~params:[] ~cstrs:[]
-      ~kind:Ptype_abstract ~private_:Public
-      ~manifest:(Some (ptyp_constr (lident (stm.module_name ^ ".t")) []))] in
+                                   ~kind:Ptype_abstract ~private_:Public
+                                   ~manifest:(Some (ptyp_constr (lident (stm.module_name ^ ".t")) []))] in
+  let state = mk_state stm.state in
+  let cmd = mk_cmd stm.cmd in
+  let init_sut = [%stri let init_sut = [%e evar (stm.module_name ^ ".init_sut")]] in
+  let  cleanup = [%stri let cleanup _ = () ] in 
   let arb_cmd = mk_arb_cmd stm.cmd stm.arb_cmd in
+  let next_state = mk_next_state stm.cmd stm.next_state stm.state in
   let precond = mk_precond stm.cmd stm.precond in
- [incl;second; open1; open2; cmd; state; sut; arb_cmd; precond]
+ [incl;second; open1; open2; sut ; state; cmd; init_sut; cleanup; arb_cmd;
+next_state;
+  precond]
 
