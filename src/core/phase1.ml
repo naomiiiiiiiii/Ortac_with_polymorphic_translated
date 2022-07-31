@@ -150,7 +150,10 @@ let value ~driver ~ghost (vd : Tast.val_description) =
   let loc = vd.vd_loc in
   let register_name = "hoho register name" in
   let arguments = List.map (Translate.var_of_arg ~driver:driver) vd.vd_args in
-  (*extracts name, label, and type of the argument. sets modified and consumed to false. *)
+  (*extracts name, label, and type of the argument. sets modified and consumed to false.
+potentially changes the name so as not to clash with anything else in scope?
+    using the pretty printer for ident
+  *)
   let returns = List.map (Translate.var_of_arg ~driver:driver) vd.vd_ret in
   let pure = false in
   let value =

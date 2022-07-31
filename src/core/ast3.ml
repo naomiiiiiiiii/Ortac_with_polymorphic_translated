@@ -1,7 +1,7 @@
 module W = Warnings
 module S = Map.Make (String)
-
 open Ppxlib
+module Ident = Gospel.Identifier.Ident
 (*open Sexplib.Std *)
 
 
@@ -164,6 +164,8 @@ val get : t -> int -> int
 type postcond = postcond_case S.t
 
 type stm = {module_name : string;
+            cmd_name : string ; (*special name for cmd argument to all stm fns*)
+            state_name : string; (*special name for state argument to all stm fns*)
             cmd: cmd;
             state : state;
             arb_cmd : arb_cmd;

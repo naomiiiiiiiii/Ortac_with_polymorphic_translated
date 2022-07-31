@@ -32,12 +32,12 @@ match acc with
   None -> Some (Lident name)
   | Some li -> Some (Ldot (li, name))) None names |> Option.get |> noloc
 
-let loc : Location.t =
+(*let loc : Location.t =
   let fake_pos : Lexing.position = {pos_fname = "fake"; pos_lnum = (-1); pos_bol = (-1); pos_cnum = (-1) } in
-  {loc_start = fake_pos; loc_end = fake_pos; loc_ghost = true }
+  {loc_start = fake_pos; loc_end = fake_pos; loc_ghost = true } *)
 
 let show_attribute : attribute =
-  let loc = !Ast_helper.default_loc in (*what is this loc start here *)
+  let loc = !Ast_helper.default_loc in 
   {attr_name = (noloc "deriving");
                          attr_payload =
                            PStr
@@ -208,13 +208,13 @@ let mk_arb_cmd (cmd: Ast3.cmd) (arb_cmd: Ast3.arb_cmd) =
       constructor -> Some (map, fn, generators) if there are args for constructor
                      None otherwise*)
     let for_oneof : (expression * expression * expression list) option S.t =
-      S.mapi (fun cmd_name gens ->
+      S.mapi (fun cmd_constr gens ->
           if (List.length gens) = 0 then None else 
             let map = evar (map_name (List.length gens)) in
-            let args : string list = (List.map (fun x -> x.name) (S.find cmd_name cmd).args) in
+            let args : string list = (List.map (fun x -> x.name) (S.find cmd_constr cmd).args) in
             let constr_args : expression = pexp_tuple (List.map evar args) 
             in
-            let fn : expression =  mk_fn_single args (pexp_construct (lident cmd_name)
+            let fn : expression =  mk_fn_single args (pexp_construct (lident cmd_constr)
                                                         (Some constr_args)
                                                      ) in
             Some (map, fn, gens)
@@ -239,9 +239,10 @@ ortac does something about this where it doesnt let you reuse variable names for
 globally*)
   (*start here make it support old and some of the fields not being listed,
   only the ones which are modified are listed*)
-let mk_next_state (cmd: Ast3.cmd) (next_state : Ast3.next_state) (state : state) =
-  let state_var = evar "s" in
-  let cmd_var = evar "c" in
+let mk_next_state (cmd: Ast3.cmd) (next_state : Ast3.next_state) (state : state) ~state_name:state_name
+  ~cmd_name:cmd_name =
+  let state_var = evar state_name in
+  let cmd_var = evar cmd_name in
   let rhs : expression S.t =
     S.map (fun (nsc : next_state_case) ->
         (*if all the fields are set then no need to use original*)
@@ -256,12 +257,12 @@ let mk_next_state (cmd: Ast3.cmd) (next_state : Ast3.next_state) (state : state)
 
 
 
-let mk_precond (cmd: Ast3.cmd) (precond : Ast3.precond) =
+let mk_precond (cmd: Ast3.cmd) (precond : Ast3.precond) ~cmd_name:cmd_name =
  (* let patterns : pattern list = List.map (fun cmd cmd_ele ->
     )
       (S.bindings cmd) *)
   let precond : expression S.t = S.map conjoin precond in 
-    let body = pexp_match (evar "c") (mk_cmd_cases cmd precond) in
+    let body = pexp_match (evar cmd_name) (mk_cmd_cases cmd precond) in
   [%stri let precond c s = [%e body]]
 
 
@@ -291,8 +292,8 @@ let structure runtime (stm : Ast3.stm) : Parsetree.structure_item list =
   let init_sut = [%stri let init_sut = [%e evar (stm.module_name ^ ".init_sut")]] in
   let  cleanup = [%stri let cleanup _ = () ] in 
   let arb_cmd = mk_arb_cmd stm.cmd stm.arb_cmd in
-  let next_state = mk_next_state stm.cmd stm.next_state stm.state in
-  let precond = mk_precond stm.cmd stm.precond in
+  let next_state = mk_next_state stm.cmd stm.next_state stm.state ~state_name:stm.state_name ~cmd_name:stm.cmd_name in
+  let precond = mk_precond stm.cmd stm.precond ~cmd_name:stm.cmd_name in
  [incl;second; open1; open2; sut ; state; cmd; init_sut; cleanup; arb_cmd;
 next_state;
   precond]

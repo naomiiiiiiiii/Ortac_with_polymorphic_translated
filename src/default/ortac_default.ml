@@ -5,7 +5,7 @@ let generate path output =
   |> Ortac_core.Utils.type_check [] path
   |> fun (env, sigs) ->
   assert (List.length env = 1);
-(*  print_endline("sigs are");
+ (* print_endline("typed signature items are");
     Core.Sexp.output_hum stdout (Gospel.Tast.sexp_of_signature sigs); *)
     Ortac_core.Ortac.signature ~runtime:"Ortac_runtime" ~module_name (List.hd env)
     sigs

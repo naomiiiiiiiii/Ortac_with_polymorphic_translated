@@ -49,21 +49,26 @@ let rec type_of_ty ~driver (ty : Ttypes.ty) =
     raise (Failure "polymorphism not supported yet")
   | Tyapp (ts, tvs) -> ((*base types like int are under here, applied to unit*)
       let args = List.map (type_of_ty ~driver) tvs in
+      Printf.printf "args at point1 is empty: %b with %s\n%!" (args = []) (ts.ts_ident.id_str);
       match Drv.get_type ts driver with
       (*throws out the arguments if a polymorphic type is instantiated
-      Tyapp (list, [int]). if it didnt through out the arguments...
+      Tyapp (list, [int]). if it didnt throw out the arguments...
         maybe best to just add the arguments/params in ty_ form 
       *)
       (*driver has information about all the base types...
         dont have to keep retranslating 'int' every time.*)
-      (*since I dont need this maybe I don't need the driver at all*)
+      (*since I dont need this maybe I don't need the driver at all
+
+      *)
       | None ->
           let mutable_ = Mutability.ty ~driver ty in
           let (argless: Translated.type_) =
             Translated.type_ ~name:ts.ts_ident.id_str ~loc:ts.ts_ident.id_loc
             ~mutable_ ~ghost:Tast.Nonghost in
            {argless with args} 
-      | Some type_ -> type_)
+      | Some type_ ->
+        Printf.printf "succesful driver lookup with %s\n%!" ts.ts_ident.id_str;
+        type_)
 
 let vsname (vs : Symbols.vsymbol) = Fmt.str "%a" Tast.Ident.pp vs.vs_name
 

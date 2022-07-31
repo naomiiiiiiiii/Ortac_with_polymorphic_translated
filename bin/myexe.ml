@@ -4,9 +4,12 @@ open Ortac_core
 module S = Map.Make (String)
 
 
-let signature ~runtime ~module_name namespace s =
+let signature ~runtime ~module_name namespace (s : Gospel.Tast.signature) =
   let driver = Drv.init module_name namespace in
-  let (translated: Drv.t) = Phase1.signature ~driver s in
+  let (translated: Drv.t) = Phase1.signature ~driver s in (*switch must be in here
+           let vsname (vs : Symbols.vsymbol) = Fmt.str "%a" Tast.Ident.pp vs.vs_name
+
+                                                          *)
   Report.emit_warnings Fmt.stderr translated;
   let stm =  Phase2.stm translated in
   Phase3.structure runtime stm 
@@ -23,9 +26,11 @@ let generate path output =
   |> Ortac_core.Utils.type_check [] path
   |> fun (env, sigs) ->
   assert (List.length env = 1);
+ (* print_endline("typed signature items are");
+    Core.Sexp.output_hum stdout (Gospel.Tast.sexp_of_signature sigs); *)
     signature ~runtime:"Ortac_runtime" ~module_name (List.hd env)
-      sigs|>
-    Fmt.pf output "%a@." Ppxlib_ast.Pprintast.structure
+      sigs
+     |> Fmt.pf output "%a@." Ppxlib_ast.Pprintast.structure 
 
 
 
