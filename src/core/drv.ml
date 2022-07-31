@@ -138,7 +138,8 @@ let stdlib =
     ([ "Gospelstdlib"; "Array"; "for_all" ], "Ortac_runtime.Array.for_all");
   ]
 
-let init module_name env =
+(*maybe driver is just to keep track of what is supported?*)
+let _init module_name env =
   let stdlib =
     List.fold_left
       (fun acc (path, ocaml) ->
@@ -154,6 +155,16 @@ let init module_name env =
       T.empty stdlib_types
   in
   { module_name; stdlib; env; translations = []; types; functions = L.empty }
+
+let init module_name env =
+  let stdlib =
+    List.fold_left
+      (fun acc (path, ocaml) ->
+         let ls = get_ls_env env path in
+         L.add ls ocaml acc)
+      L.empty stdlib in
+  {module_name; stdlib = stdlib; env; translations = []; types = T.empty;
+                            functions = L.empty }
 
 let map_translation ~f t = List.rev_map f t.translations
 let iter_translation ~f t = List.iter f (List.rev t.translations)
