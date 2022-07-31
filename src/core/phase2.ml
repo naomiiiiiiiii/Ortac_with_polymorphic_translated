@@ -1,7 +1,7 @@
  open Translated
 open Ast3
     open Ppxlib
- open Builder 
+(* open Builder *)
 module Ident = Gospel.Identifier.Ident
 
 module S = Map.Make (String)
@@ -219,13 +219,13 @@ wait lol**)
 (*s is a special variable refering to the old state argument for cmds
   that first argument of type t is always called s*)
 
-let make_next_pure (state_name: string)
+let make_next_pure 
     (cmd_item: Translated.value) (state: state) (prefix: string) (used : bool I.t) :
   expression S.t * bool I.t =
   S.fold 
     (fun field _ (next_state, used) -> 
        if cmd_item.pure then 
-         (S.add field [%expr [%e evar (state_name ^ "." ^ field)]] next_state, used)
+         (next_state, used)
        else let (index_used, rhs) = get_field_rhs ~error:cmd_item.name cmd_item.postconditions field prefix in
          assert(I.find index_used used = false);
         (S.add field rhs next_state, I.add index_used true used)
@@ -252,10 +252,10 @@ let make_next_mut  state_name: Ident.t) (cmd_item: Translated.value) (state: sta
 let mk_used_posts posts = List.fold_right (fun i acc -> I.add i false acc)
     (List.init (List.length posts) (fun i -> i)) I.empty
 
-let init_state (items: Translated.structure_item list) (state: state) state_name : init_state =
+let init_state (items: Translated.structure_item list) (state: state)  : init_state =
   match find_value items "Init_sut" with
     Some cmd_item -> assert (List.length cmd_item.returns = 1);
-    make_next_pure state_name
+    make_next_pure 
       cmd_item state (List.hd cmd_item.returns).name (mk_used_posts cmd_item.postconditions)
     |> fst
   | None -> raise (Failure "init_sut undefined; could not initialize")
@@ -268,23 +268,24 @@ next_state items cmds state = (states, used)
   used[cmd_name][i] is true if the ith 'ensures' listed under cmd_name was used
   in generating states[cmd_name]
 *)
-let next_state items (cmds: cmd) state state_name : next_state * ((bool I.t) S.t)=
+let next_state items (cmds: cmd) state : next_state * ((bool I.t) S.t)=
   let unzip (m : 'a S.t) = (S.map fst m, S.map snd m) in
-let zipped =   S.mapi (fun cmd (cmd_ele : cmd_ele) ->
+  let zipped =   S.mapi (fun cmd (cmd_ele : cmd_ele) ->
       let cmd_item = (match (find_value items cmd) with
-          None -> raise (Failure ("could not find " ^ cmd))
+            None -> raise (Failure ("could not find " ^ cmd))
           | Some cmd_item -> cmd_item)
       in
       let pres : expression list =
         (List.map (fun (pre: Translated.term) -> pre.translation |> Result.get_ok) cmd_item.preconditions) @
-      (translate_checks cmd_item.checks) in
-        (*silly processing to get the check*)
+        (translate_checks cmd_item.checks) in
+      (*silly processing to get the check*)
       let (used_post : bool I.t) = mk_used_posts cmd_item.postconditions in
       (*initialize them all to false as all of the ensures for this cmd are initially unused*)
-      let (next, used_post)  = make_next_pure state_name cmd_item state cmd_ele.targ_name used_post in
+      let (next, used_post)  =
+        make_next_pure cmd_item state cmd_ele.targ_name used_post in
       ({pres; next}, used_post))
-    cmds in
-unzip zipped 
+      cmds in
+  unzip zipped 
 
 (*if it doesnt say pure assume it can raise*)
 let run items (cmds : cmd)  : run = S.mapi
@@ -336,8 +337,8 @@ let stm (driver : Drv.t) : Ast3.stm  =
   let cmd = cmd items in
   let state = state items in
   let arb_cmd = arb_cmd cmd in
-  let init_state = init_state items state state_name in
-  let (next_state, used) = next_state items cmd state state_name in
+  let init_state = init_state items state in
+  let (next_state, used) = next_state items cmd state  in
   let run = run items cmd in
   let precond = precond items cmd in
   let postcond = postcond items cmd used in

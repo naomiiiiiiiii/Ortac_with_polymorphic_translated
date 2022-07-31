@@ -249,8 +249,9 @@ let mk_next_state (cmd: Ast3.cmd) (next_state : Ast3.next_state) (state : state)
   let rhs : expression S.t =
     S.map (fun (nsc : next_state_case) ->
         (*if all the fields are set then no need to use original*)
+        (*start there need to check that cardinal of state is not 0*)
         let og = if S.cardinal nsc.next = S.cardinal state then None else (Some state_var) in
-        let record = mk_record ~og nsc.next in
+        let record = if S.cardinal nsc.next = 0 then state_var else mk_record ~og nsc.next in
         match nsc.pres with
           [] -> record (*no preconditions so automatically move to next state*)
         | _::_ -> [%expr if [%e conjoin nsc.pres] then

@@ -20,6 +20,6 @@ pp_loc
 ppx_jane
   ppxlib.ast)
 )
-(env
-  (dev
-    (flags (:standard -w -27 -w -32 -w -34))))
+;(env
+ ; (dev
+  ;  (flags (:standard -w -27 -w -32 -w -34))))
