@@ -50,6 +50,14 @@ let mk_ocaml_var (v: Translated.ocaml_var) : Ast3.ocaml_var =
   {name = v.name;
                                           label = v.label;
                                           typ = typ_of_type_ v.name v.type_}
+(*
+let mk_ocaml_var_tuple vs = match vs with
+  | [] -> (*function returns unit and so has an empty return list *) 
+  {name = Fmt.str "%a" Ident.pp (Ident.create "_unit" ~loc);
+   label = Nolabel ;
+   typ = Unit }
+  | [v] -> mk_ocaml_var v
+  | v::vs *)
 
 let safe_add (key : string) v (m : 'a S.t) = match S.find_opt key m with
   None -> `Ok (S.add key v m)
@@ -84,7 +92,10 @@ let cmd (items: Translated.structure_item list) : Ast3.cmd =
          (match (safe_add v.name
                    {targ_name;
                     args = List.map mk_ocaml_var v.arguments;
+                    (*gospel does not allow you to unpack tuples in arguments,
+                    so all of these are actually separate*)
                     ret = List.map mk_ocaml_var v.returns;
+                    (*if this is a nonsingleton list then it's a tuple*)
                    } acc) with
          |`Ok out -> out
          | `Duplicate key -> raise (Failure ("function declared twice: " ^ key)))
@@ -290,7 +301,7 @@ let next_state items (cmds: cmd) state : next_state * ((bool I.t) S.t)=
 (*if it doesnt say pure assume it can raise*)
 let run items (cmds : cmd)  : run = S.mapi
     (fun cmd (cmd_ele: cmd_ele) ->
-    let cmd_item = find_value items cmd |> Option.get in (cmd_ele.args, cmd_item.pure))
+    let cmd_item = find_value items cmd |> Option.get in (cmd_ele.ret, cmd_item.pure))
     cmds
 
 let precond items cmds : precond = S.mapi
@@ -325,15 +336,12 @@ cmds
 
 
 let stm (driver : Drv.t) : Ast3.stm  =
-  let loc = !Ast_helper.default_loc in 
   let capitalize items = List.map (fun item ->
       match item with
       Value v -> Value {v with name = String.capitalize_ascii v.name}
       | _ -> item
     ) items in
   let items = capitalize driver.translations in 
-  let cmd_name = Fmt.str "%a" Ident.pp (Ident.create "c" ~loc) in
-  let state_name = Fmt.str "%a" Ident.pp (Ident.create "s" ~loc) in
   let cmd = cmd items in
   let state = state items in
   let arb_cmd = arb_cmd cmd in
@@ -343,7 +351,7 @@ let stm (driver : Drv.t) : Ast3.stm  =
   let precond = precond items cmd in
   let postcond = postcond items cmd used in
   {module_name = driver.module_name;
-   cmd_name ; state_name;
+   (* cmd_name ; state_name; *)
    cmd; state; arb_cmd; init_state;
    next_state; run; precond; postcond}
 

@@ -65,10 +65,13 @@ type ocaml_var = {name : string; label : arg_label; typ: typ}
   (not included in the cmd type, etc)
 *)
 (*start here you should use the targ_name instead of s for the old state name*)
-(*ret is large list when tuple. what name does ortac use for the whole tuple?
-none, gospel makes you deconstruct the tuple
+(*ret is non-singleton list when tuple. what name does ortac use for the whole tuple?
+none, gospel makes you deconstruct the tuple.
+  what name does ortac use for a tuple of tuples?
+
 *)
-type cmd_ele = {targ_name: string; args: ocaml_var list; ret: ocaml_var list }
+                 (*start here do i even need the targ_name?*)
+type cmd_ele = {targ_name: string; args: ocaml_var list; ret: ocaml_var list}
 type cmd= cmd_ele S.t
 
 (*will get this from the models of t (sut)
@@ -110,7 +113,7 @@ type init_state = expression S.t
 type next_state_case = { pres: expression list; next: expression S.t} 
 type next_state = next_state_case S.t 
 
-(*command name -> arguments, can raise exn*)
+(*command name -> return type, is pure (can't raise exn)*)
 type run = (ocaml_var list * bool) S.t
 
 
@@ -164,8 +167,8 @@ val get : t -> int -> int
 type postcond = postcond_case S.t
 
 type stm = {module_name : string;
-            cmd_name : string ; (*special name for cmd argument to all stm fns*)
-            state_name : string; (*special name for state argument to all stm fns*)
+            (* cmd_name : string ; (*special name for cmd argument to all stm fns*)
+            state_name : string; (*special name for state argument to all stm fns*) *)
             cmd: cmd;
             state : state;
             arb_cmd : arb_cmd;
