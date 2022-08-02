@@ -112,7 +112,7 @@ type ocaml_var = {
 type xpost = {
   exn : string;
   args : int;
-  translation : ((cases, W.t list) result [@sexp.opaque]); (*fix this*)
+  translation : ((cases, W.t list) result [@sexp.opaque]); (*Exn _??_ -> rhs *)
 }
 [@@deriving sexp_of]
 

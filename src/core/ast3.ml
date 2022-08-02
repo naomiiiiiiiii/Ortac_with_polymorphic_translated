@@ -71,7 +71,7 @@ none, gospel makes you deconstruct the tuple.
 
 *)
                  (*start here do i even need the targ_name?*)
-type cmd_ele = {targ_name: string; args: ocaml_var list; ret: ocaml_var list}
+type cmd_ele = {targ_name: string; args: ocaml_var list; ret: ocaml_var list; pure:bool}
 type cmd= cmd_ele S.t
 
 (*will get this from the models of t (sut)
@@ -113,6 +113,7 @@ type next_state_case = { pres: expression list; next: expression S.t}
 type next_state = next_state_case S.t 
 
 (*command name -> return type, is pure (can't raise exn)*)
+    (*start here completely contained in cmd now, dont even need this*)
 type run = (ocaml_var list * bool) S.t
 
 
@@ -120,20 +121,61 @@ type run = (ocaml_var list * bool) S.t
 type precond = expression list S.t 
 
 
-(*iff checks then raise invalid argument
-iff a raises then raise that Exn (dont support this for right now)
+(*iff ANY checks then raise invalid argument
+      (start here can a function be pure and raise a checks at the same time?)
+iff a raises then raise that Exn 
 Otherwise need to look in the ensures for all conditions to do with result _op _ _rhs_
 for each fn
   (the arguments for the pattern matching, the return string for pattern matching,
   all the checks,
   the result in the ensures)
 *)
+
+(*
+not sure if this is a good idea or not
+start here make each of the types self contained so you dont need to take in the cmd as arg
+in phase 3 and use stateful finds everywhere
+
+can you do polymorphic records in some of the case generating fns?
+*)
+
+
+(*by the time you are checking ensures r must be ok because if r was Error _ 
+  then there should have been a raises which caught it earlier.
+  IN PURE CASE
+  assert (raises = []);
+if checks then conjoin ensures else (match r with Error (Invalid_argument _) -> true | _ -> false)
+
+  IN IMPURE CASE
+if checks then
+  match r with
+ | Error exn -> match exn (cases from expost)
+ | Ok r -> conjoin ensures
+  else (match r with Error (Invalid_argument _) -> true | _ -> false)
+
+
+
+  what if
+
+
+
+  IN THE IMPURE CASE after the checks should look like 
+  if raise1 then r = Error exn1 else …
+  if raise n then  Error exnn else 
+  (match r with Ok r -> conjoin of all the ensures unchanged 
+  | Error _ -> raise (Failure unexpected exn) start here do something better about error raising
+  IN THE PURE CASE
+  if raise1 then r = Error exn1 else …
+  if raise n then  Error exnn else 
+  conjoin of all the ensures unchanged 
+*)
 type postcond_case =
-  {args: ocaml_var list;
-   ret: ocaml_var list;
+  {
    checks: expression list;
-   raises: (string * expression) list; (*? is this the right type*)
-   postcond: expression list; (*the expressions that go in here are all the ensures
+   raises: cases; (*start here why is it a cases list list in translated?*)
+   ensures: expression list; (*
+start here make this only the right hand sides *)
+(*the expressions that go in here are all the ensures
                               that have not already been used figuring out the state
                               the ones that have already been used getting to this
                               point are the ones to do with state.field =
@@ -145,7 +187,7 @@ if you were to write
                                 all the args are in scope and above is correct syntax for
                                 the state.
                                 i think gospel type checking should be sufficient to ensure
-                                that all the remaining preconditions are well typed.
+                                that all the remaining ensures are well typed.
 so, which functions "use" post conditions?
                                 just next_state. 
 
@@ -158,7 +200,7 @@ val get : t -> int -> int
     need to check the rhs of all the next states does not use the return name.
     ^ no way to get around writing the contains_ident function.
     can i just run the ocaml typechecker on the = expression with out outside of scope?
-    how does the gospel typechecker check scoping <- LOOK IN HERE START HERE
+    how does the gospel typechecker check scoping <- LOOK IN HERE START HERE start here this is serious
 
     that said all the ensures that aren't already used SHOULD go in the post condition
     so i think this approach is still a good idea.
