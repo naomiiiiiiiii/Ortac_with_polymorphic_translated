@@ -92,7 +92,6 @@ if arg list is empty then do Gen.return
 
 (*to get init_sut assume method in the gospel file called create? which describes how the
 fields in the state are set*)
-(*assume for now <5 args or whatever the highest map is *)
 
 type init_state = expression S.t
   (* <- just a tuple of value. get these values from the ensures of create in gospel which in the drv.t is a term list. you have to go into the term to find the state_element_n = __expression__.

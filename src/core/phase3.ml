@@ -310,6 +310,8 @@ let mk_run m_name (cmd : Ast3.cmd) (run: Ast3.run) ~cmd_name:cmd_name ~sut_name:
   [%stri let run [%p pvar cmd_name] [%p pvar sut_name] = [%e body]]
 
 
+let mk_init_state (init_state: Ast3.init_state) =
+  [%stri let init_state = [%e mk_record init_state]]
 
 
 
@@ -341,8 +343,9 @@ let structure runtime (stm : Ast3.stm) : Parsetree.structure_item list =
   let next_state = mk_next_state stm.cmd stm.next_state stm.state
       ~state_name ~cmd_name in
   let run = mk_run stm.module_name stm.cmd stm.run ~cmd_name ~sut_name in
+  let init_state = mk_init_state stm.init_state in
   let precond = mk_precond stm.cmd stm.precond
       ~state_name ~cmd_name in
   [incl;second; open1; open2; sut ; state; cmd; init_sut; cleanup; arb_cmd;
-next_state; run; precond]
+next_state; run; init_state; precond]
 
