@@ -344,8 +344,8 @@ let mk_run m_name (cmd : Ast3.cmd) (run: Ast3.run) ~cmd_name:cmd_name ~sut_name:
 let mk_init_state (init_state: Ast3.init_state) =
   [%stri let init_state = [%e mk_record init_state]]
 
-let mk_postcond cmd (postcond: Ast3.postcond ) ~cmd_name:cmd_name ~state_name:state_name =
-  let rhs : expression S.t = S.mapi (fun cmd_cstr cmd_ele ->
+let mk_postcond (cmd : Ast3.cmd) (postcond: Ast3.postcond ) ~cmd_name:cmd_name ~state_name:state_name =
+  let rhs : expression S.t = S.mapi (fun cmd_cstr (cmd_ele : cmd_ele) ->
       let pc_case = S.find cmd_cstr postcond in
       let r_name : string  = match cmd_ele.ret with
         | [] -> raise (Failure ("empty return list in" ^ cmd_cstr ))
@@ -357,33 +357,23 @@ let mk_postcond cmd (postcond: Ast3.postcond ) ~cmd_name:cmd_name ~state_name:st
       let ensures_conj = conjoin pc_case.ensures  in
       let true_branch = if cmd_ele.pure then ensures_conj else
           let exn_name = new_name "exn" in
-          let exn_match = pexp_match (evar ex_name) pc_case.raises in
+          let exn_match = pexp_match (evar exn_name) pc_case.raises in
           (*will it fall through here if an unexpected exception is raised start here*)
-          let result_cases =
             [%expr match [%e evar r_name] with
-| Error [%pat? pvar exn_name] -> [%e exn_match] 
-          | Ok [%pat? pvar r_name] -> [%e ensures_conj] ] in 
-      let false_branch = [%expr match [%e r_name] with
+              | Error [%p pvar exn_name] -> [%e exn_match]
+              | Ok [%p pvar r_name] -> [%e ensures_conj] ] in
+      let false_branch = [%expr match [%e evar r_name] with
         Error (Invalid_argument _) -> true
         | _ -> false
       ] in
-[%expr if [%e checks_conj] then [%e true_branch] else [%e false_branch]]
-
-     (*leftover code? *)
-      let ensures_conj = if pure then ensures_conj else
-          [%expr match [%e evar r_name] with
-            | Ok [%p pvar r_name] -> ensures_conj
-            | Error exn -> Fmt.pf stderr "unexpected exception raised in %s\n%!" cmd_cstr;
-              raise exn ] (*start here ask jan if this is good error handling*) in 
-      let body = List.fold_right (fun raises body ->
-          [%expr if [%e raises.condition] then r = Error [%e raises.exn]]
-        ) pc.raises ensures_conj
-
-     (*if raises condition then r = Error (that raises)*)
-    ) cmd
+[%expr if [%e checks_conj] then [%e true_branch] else [%e false_branch]])
+      cmd
+  in
 let res_name = new_name "res" in
-  let body = pexp_match (pexp_tuple [(evar cmd_name); (evar res_name)]) (mk_cmdres_cases cmd rhs) in
-  [%stri let postcond [%p pvar cmd_name] [%p pvar state_name] [%p pvar res_name] = [%e body]]
+let body = pexp_match (pexp_tuple [(evar cmd_name); (evar res_name)])
+    (mk_cmdres_cases ~state_name:state_name cmd rhs)
+  in
+[%stri let postcond [%p pvar cmd_name] [%p pvar state_name] [%p pvar res_name] = [%e body]]
 
 
 let structure runtime (stm : Ast3.stm) : Parsetree.structure_item list =
