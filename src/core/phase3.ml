@@ -345,32 +345,53 @@ let mk_init_state (init_state: Ast3.init_state) =
   [%stri let init_state = [%e mk_record init_state]]
 
 
-let mk_xpost (_xposts: Ast3.xpost list) (_exn_name : string) : case list = []
-(*  let default_cases = [case ~guard:None ~lhs:[%pat? (Stack_overflow | Out_of_memory)]
+let mk_xpost (xposts: Ast3.xpost list) (exn_name : string) : case list =
+  let default_cases = [case ~guard:None ~lhs:[%pat? (Stack_overflow | Out_of_memory)]
                          ~rhs:[%expr raise [%e evar exn_name]];
                        case ~guard:None ~lhs:[%pat? _] ~rhs:[%expr false]] in
-  let (args, cases) =  List.fold_right (fun (xpost: Ast3.xpost) (args, cases)->
+(*args is exn name mapped to number of arguments
+cases is exn name mapped to a cases LIST. *)
+  let ((args : int S.t), (cases : cases list S.t)) =
+    List.fold_right (fun (xpost: Ast3.xpost) (args, cases)->
       (S.add xpost.name xpost.args args, 
-       S.update xpost.name xpost.translation)
-        xposts (S.empty, S.empty) in 
-  S.fold (fun name args cases ->
-START HERE
-    ) args default_cases
-
-  |> fun s -
-  M.fold (*fold over the arguments of the exns*)
-    (fun (exn: string) (args : int) (acc : case list) ->
-      let e = gen_symbol ~prefix:"__e_" () in
-      let lhs =
-        ppat_alias
-          (ppat_construct (lident exn)
-             (if args = 0 then None else Some ppat_any))
-          (noloc e)
-      in
-      let matches =
-        Hashtbl.find_all tbl exn |> List.map (pexp_match (evar e)) |> esequence
-
+       S.update xpost.name (function
+           | None -> Some [xpost.translation]
+           | Some prev_cases -> Some ((xpost.translation) ::prev_cases)) cases) )
+        xposts (S.empty, S.empty) in
+(*now when you look up exn_constr in cases you will get a LIST of case lists
+where each case list is ONE exn_constr clause with arguments packaged. 
 *)
+  S.fold (fun exn_constr exn_cases outer_cases ->
+      let args = S.find exn_constr args in
+      let lhs = ppat_alias
+          (ppat_construct (lident exn_constr) (if args = 0 then None else Some ppat_any))
+          (noloc exn_name) in
+      let inner_cases : cases list =
+        List.map (fun cases -> (*ONE exn_constr clause with arguments packaged*)
+            (List.map (fun case ->
+                {case with pc_rhs = pexp_tuple [case.pc_rhs; [%expr true]]}) cases)@
+            [case ~lhs:ppat_any ~guard:None ~rhs:[%expr (true, false)]]
+          )
+          exn_cases
+          (*for each of the exn_cases need to add a true 2nd ele
+          last case of _ -> (true, false)*)
+      in
+      let matches : expression list = List.map (pexp_match (evar exn_name)) inner_cases
+      in
+      let inner_case_accumulate : expression =
+        [%expr (fun (truth, matched) (truth_acc, matched_acc) ->
+            (truth && truth_acc, matched || matched_acc)
+          )] in
+      let rhs  = [%expr List.fold_right
+          [%e inner_case_accumulate]
+          [%e elist matches]
+          (true, false) |> (&&)
+      ]
+     in (case ~guard:None ~lhs ~rhs)::outer_cases
+    ) cases default_cases
+
+
+
 
 
 
