@@ -179,7 +179,7 @@ let mk_cmd_pat (cmd : string) (cmd_ele: cmd_ele) =
   ppat_construct (lident cmd) (match cmd_ele.args with
       | [] -> None
       | _::_ as args ->
-        Some (ppat_tuple (List.map (fun arg -> pvar arg.name) args) ))
+        Some (ppat_tuple (List.map (fun (arg: Ast3.ocaml_var) -> pvar arg.name) args) ))
 
 
 let mk_cmd_cases ?(state_name = None) (cmd : Ast3.cmd) (rhs : expression S.t)  =
@@ -198,7 +198,7 @@ let mk_cmdres_cases ~state_name:state_name (cmd : Ast3.cmd) (rhs : expression S.
   let mk_res_pat cmd_cstr (cmd_ele : Ast3.cmd_ele) : pattern =
     let (typ, rpat) = match cmd_ele.ret with
       (*start here change this with r_name in mk_postcond if it works*)
-      | [] -> raise (Failure ("empty return list in" ^ cmd_cstr ))
+      | [] -> pvar "Unit", ppat_any 
       (*start here replace all empty return lists in earlier phase*)
       | [ret] -> pvar (typ_to_str ~args:true ~capitalize:true ret.typ), pvar ret.name
       | _ :: _ -> raise (Failure ("tuple return type in " ^ cmd_cstr ^ " not yet supported")) in
@@ -258,7 +258,7 @@ let mk_arb_cmd (cmd: Ast3.cmd) (arb_cmd: Ast3.arb_cmd) =
       S.mapi (fun cmd_constr gens ->
           if (List.length gens) = 0 then None else 
             let map = evar (map_name (List.length gens)) in
-            let args : string list = (List.map (fun x -> x.name) (S.find cmd_constr cmd).args) in
+            let args : string list = (List.map (fun (x: ocaml_var) -> x.name) (S.find cmd_constr cmd).args) in
             let constr_args : expression = pexp_tuple (List.map evar args) 
             in
             let fn : expression =  mk_fn_single args (pexp_construct (lident cmd_constr)
@@ -329,7 +329,7 @@ let mk_run m_name (cmd : Ast3.cmd) (run: Ast3.run) ~cmd_name:cmd_name ~sut_name:
       | _ :: _ -> raise (Failure ("tuple return type in " ^ cmd_cstr ^ " not yet supported")) in
       let typ = if pure then typ else [%expr result [%e typ] exn] in
       let cmd = S.find cmd_cstr cmd in
-      let args = (evar sut_name)::(List.map (fun arg -> evar arg.name) cmd.args) in
+      let args = (evar sut_name)::(List.map (fun (arg : ocaml_var) -> evar arg.name) cmd.args) in
       let fn = (evar (m_name ^ "." ^ (String.uncapitalize_ascii cmd_cstr))) in 
       let app = if pure
         then mk_app fn args
@@ -344,22 +344,57 @@ let mk_run m_name (cmd : Ast3.cmd) (run: Ast3.run) ~cmd_name:cmd_name ~sut_name:
 let mk_init_state (init_state: Ast3.init_state) =
   [%stri let init_state = [%e mk_record init_state]]
 
+
+let mk_xpost (_xposts: Ast3.xpost list) (_exn_name : string) : case list = []
+(*  let default_cases = [case ~guard:None ~lhs:[%pat? (Stack_overflow | Out_of_memory)]
+                         ~rhs:[%expr raise [%e evar exn_name]];
+                       case ~guard:None ~lhs:[%pat? _] ~rhs:[%expr false]] in
+  let (args, cases) =  List.fold_right (fun (xpost: Ast3.xpost) (args, cases)->
+      (S.add xpost.name xpost.args args, 
+       S.update xpost.name xpost.translation)
+        xposts (S.empty, S.empty) in 
+  S.fold (fun name args cases ->
+START HERE
+    ) args default_cases
+
+  |> fun s -
+  M.fold (*fold over the arguments of the exns*)
+    (fun (exn: string) (args : int) (acc : case list) ->
+      let e = gen_symbol ~prefix:"__e_" () in
+      let lhs =
+        ppat_alias
+          (ppat_construct (lident exn)
+             (if args = 0 then None else Some ppat_any))
+          (noloc e)
+      in
+      let matches =
+        Hashtbl.find_all tbl exn |> List.map (pexp_match (evar e)) |> esequence
+
+*)
+
+
+
+
+
+
 let mk_postcond (cmd : Ast3.cmd) (postcond: Ast3.postcond ) ~cmd_name:cmd_name ~state_name:state_name =
   let rhs : expression S.t = S.mapi (fun cmd_cstr (cmd_ele : cmd_ele) ->
       let pc_case = S.find cmd_cstr postcond in
-      let r_name : string  = match cmd_ele.ret with
-        | [] -> raise (Failure ("empty return list in" ^ cmd_cstr ))
+      let r_name  = match cmd_ele.ret with
+        | [] -> new_name "ret"
+        (*problem with functions that return unit *)
         | [ret] -> ret.name
-        | _ :: _ -> raise (Failure ("tuple return type in " ^ cmd_cstr ^ " not yet supported")) in
-
+        | _ :: _ -> raise (Failure ("tuple return type in " ^ cmd_cstr ^ " not yet supported"))
+      in
       let checks_conj = conjoin pc_case.checks in (*if all the checks then body
                                                else r = Error Invalid_argument *)
       let ensures_conj = conjoin pc_case.ensures  in
       let true_branch = if cmd_ele.pure then ensures_conj else
           let exn_name = new_name "exn" in
-          let exn_match = pexp_match (evar exn_name) pc_case.raises in
+          let exn_match = pexp_match (evar exn_name) (mk_xpost pc_case.raises exn_name)
+          in
           (*will it fall through here if an unexpected exception is raised start here*)
-            [%expr match [%e evar r_name] with
+            [%expr match [%e (evar r_name)] with
               | Error [%p pvar exn_name] -> [%e exn_match]
               | Ok [%p pvar r_name] -> [%e ensures_conj] ] in
       let false_branch = [%expr match [%e evar r_name] with
@@ -404,8 +439,8 @@ let structure runtime (stm : Ast3.stm) : Parsetree.structure_item list =
       ~state_name ~cmd_name in
   let run = mk_run stm.module_name stm.cmd stm.run ~cmd_name ~sut_name in
   let init_state = mk_init_state stm.init_state in
-  let precond = mk_precond stm.cmd stm.precond
-      ~state_name ~cmd_name in
+  let precond = mk_precond stm.cmd stm.precond ~state_name ~cmd_name in
+  let postcond = mk_postcond stm.cmd stm.postcond ~cmd_name ~state_name in 
   [incl;second; open1; open2; sut ; state; cmd; init_sut; cleanup; arb_cmd;
-next_state; run; init_state; precond]
+next_state; run; init_state; precond; postcond]
 

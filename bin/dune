@@ -19,7 +19,9 @@ ortac_stm
 pp_loc
 ppx_jane
   ppxlib.ast)
+  (modules_without_implementation example exn_example)
 )
 (env
   (dev
     (flags (:standard -w -27 -w -32 -w -34))))
+

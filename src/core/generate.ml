@@ -56,7 +56,7 @@ let group_xpost (v : Translated.value) =
         ~lhs:[%pat? (Stack_overflow | Out_of_memory) as e]
         ~rhs:
           [%expr
-            [%e checks true v.checks @@ invariants @@ F.report ~register_name];
+            [%e checks true v.checks @@ invariants @@ (F.report ~register_name)];
             raise e];
       case ~guard:None
         ~lhs:[%pat? e]
@@ -78,17 +78,22 @@ let group_xpost (v : Translated.value) =
     in
     if v.checks = [] then default_cases else invalid_arg_case :: default_cases 
   in
+  (*tbl : string -> case list*)
   let tbl = Hashtbl.create 0 in
+  (*keys: string -> int map
+    aux : int M.t -> xpost list -> int M.t*)
   let rec aux keys = function
     | [] -> keys
     | { exn; args; translation = Ok translation } :: t ->
-        Hashtbl.add tbl exn translation;
-        aux (M.add exn args keys) t
+        Hashtbl.add tbl exn translation; (*add exn's tranlation to the hashtable*)
+        aux (M.add exn args keys) t (*add exns arg number to keys*)
     | _ :: t -> aux keys t
   in 
-  aux M.empty v.xpostconditions |> fun s ->
-  M.fold
-    (fun exn args acc ->
+  aux M.empty v.xpostconditions (*now all the exns translations are in tbl and all
+                                the exns arg numbers are in the return of this function*)
+  |> fun s ->
+  M.fold (*fold over the arguments of the exns*)
+    (fun (exn: string) (args : int) (acc : case list) ->
       let e = gen_symbol ~prefix:"__e_" () in
       let lhs =
         ppat_alias

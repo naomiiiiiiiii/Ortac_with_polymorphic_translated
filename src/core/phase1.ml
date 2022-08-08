@@ -29,6 +29,9 @@ let unsafe_term ~driver (t : Tterm.term) : expression =
   | _ -> Translation.unsafe_term ~driver:driver t
 
 
+(*start here ask jan put some error catching for when specs fail back
+stm will catch this if a spec fails and tell the user, don't need it in the stm module
+*)
 let bool_term ~driver (_fail : string) t =
   try Ok (unsafe_term ~driver t) with
   W.Error t -> Error t 
@@ -144,6 +147,65 @@ let with_post ~driver ~term_printer pres (value : Translated.value) =
   in
   { value with postconditions }
 
+(*matches on a pattern_node
+the exception pattern in raises Silly pat -> term
+goes from a Tast.pattern_node to a ppx pattern *)
+(*the names of the args get included in this pattern*)
+let xpost_pattern = Translation.xpost_pattern
+
+let assert_false_case =
+  case ~guard:None ~lhs:[%pat? _] ~rhs:[%expr false]
+
+(*each exception has multiple patterns, terms*)
+let with_xposts ~driver (xposts: (Ttypes.xsymbol * (Tterm.pattern * Tterm.term) list) list)
+    (value : Translated.value) =
+  (*the second element of xposts is the ptlist in xpost fn below*)
+  (* print_endline("incoming xposts are:");
+     Core.Sexp.output_hum stdout (Tast.sexp_of_xpost xposts); *)
+  (*xpost processes one raises into a case list*)
+  List.fold_right (fun (exn, ptlist) _ ->
+      Printf.printf "exception %s has a list of length %d\n%!" exn.Ttypes.xs_ident.id_str
+        (List.length ptlist)
+    ) xposts ();
+  let xpost ((exn : Ttypes.xsymbol), (ptlist : (Tterm.pattern * Tterm.term) list)) =
+    let name : string = exn.Ttypes.xs_ident.id_str in
+    let cases =
+      List.map
+        (fun (p, t) ->
+          bool_term ~driver "xpost" t
+          |> Result.map (fun (t : expression) -> (*turn the term into a case*)
+                 case ~guard:None
+                   ~lhs:(xpost_pattern ~driver name p.Tterm.p_node) (*make an xpost pattern*)
+                   ~rhs:t
+            ))
+        (* XXX ptlist must be rev because the cases are given in the
+           reverse order by gospel *)
+        (List.rev ptlist) (*<- this is never empty even with an exn which is always true*)
+    in
+    if List.exists Result.is_error cases then
+      List.filter_map (function Ok _ -> None | Error x -> Some x) cases
+      |> Result.error
+    else List.map Result.get_ok cases (*@ [ assert_false_case ]*) |> Result.ok
+    (*case list is never empty without the false case and it makes things match with false too early*)
+  in
+  let xpostconditions : Translated.xpost list = (*turn each tast xpost into a translated xpost*)
+    let open Translated in
+    List.map
+      (fun xp ->
+        let xs = fst xp in
+        let exn = xs.Ttypes.xs_ident.id_str in
+        let args =
+          match xs.Ttypes.xs_type with
+          | Ttypes.Exn_tuple l -> List.length l
+          | Ttypes.Exn_record _ -> 1
+        in
+        let translation = xpost xp in
+        { exn; args; translation }) (*keeps the number of args but not what they are
+                                    but doesnt matter because what the args are is stored in the translation*)
+      xposts
+  in
+  { value with xpostconditions }
+
 
 let value ~driver ~ghost (vd : Tast.val_description) =
   let name = vd.vd_name.id_str in
@@ -169,10 +231,10 @@ potentially changes the name so as not to clash with anything else in scope?
       |> with_checks ~driver spec.sp_checks 
       |> with_pre ~driver ~term_printer spec.sp_pre
       |> with_post ~driver ~term_printer spec.sp_post
-    (*  |> with_xposts ~driver ~term_printer spec.sp_xpost
-        (*throw all of these out for now start here*)
+      |> with_xposts ~driver spec.sp_xpost
+        (*throw all of these out for now start here
       |> with_consumes spec.sp_cs
-        |> with_modified spec.sp_wr *)
+          |> with_modified spec.sp_wr *)
     in
     { value with pure = spec.sp_pure }
   in

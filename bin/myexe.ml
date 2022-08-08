@@ -41,11 +41,10 @@ that this doesn't work, ask jan*)
 
 let main () =
    let inpath = "atom.mli" in
-(*let outpath = stdout in*)
- (* let channel = open_out outpath in*)
-let channel = stdout in generate inpath channel
-
-  (*(try Ortac_default.generate inpath channel
+   (* let outchannel = stdout in*)
+   let channel = stdout in generate inpath channel 
+(* 
+  (try Ortac_default.generate inpath outchannel
   with Gospel.Warnings.Error e ->
     Fmt.epr "%a@." Gospel.Warnings.pp e;
     exit 1) *)

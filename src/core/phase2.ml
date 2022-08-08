@@ -87,7 +87,7 @@ let cmd (items: Translated.structure_item list) : Ast3.cmd =
    ((List.hd v.arguments).name, {v with arguments = (List.tl v.arguments)}) in
  List.fold_right (fun item acc -> match item with
       (*need to require here that the first argument is t*)
-      | Value v when (is_stmable v) ->
+      | Value v when (is_stmable v) -> (*start here need to enforce that all the values are stmable*)
         let (targ_name, v) = make_stmable v in
          (match (safe_add v.name
                    {targ_name;
@@ -96,6 +96,7 @@ let cmd (items: Translated.structure_item list) : Ast3.cmd =
                     so all of these are actually separate*)
                     ret = List.map mk_ocaml_var v.returns;
                     (*if this is a nonsingleton list then it's a tuple*)
+                    pure = v.pure;
                    } acc) with
          |`Ok out -> out
          | `Duplicate key -> raise (Failure ("function declared twice: " ^ key)))
@@ -315,24 +316,26 @@ List.map (fun (term: Translated.term) -> term.translation |> Result.get_ok)
 start here*)
 let postcond items (cmds : cmd) (used: (bool I.t) S.t) : postcond =
   S.mapi
-(fun cmd (cmd_data: cmd_ele) ->
-  let cmd_item = Option.get (find_value items cmd) in
-  let args = cmd_data.args in
-  let ret = cmd_data.ret in
-  let checks = translate_checks cmd_item.checks in
-  let raises = [] in (*start here*)
- let postcond = let used = S.find cmd used in
-   List.filter_map (fun (i, (t: term)) -> if (not (I.find i used))
-                     then Some (t.translation |> Result.get_ok)
-                         else None) (enum cmd_item.postconditions) in
-   (*want the whole equals here
-                                                           not just the rhs,
-                                                           probably shouldnt use make_next*)
-     (*need a conjunction of all the ensures with the result name on either side of the equals*)
-let out : postcond_case = {args; ret; checks; raises; postcond } in
-  out
-)
-cmds 
+    (fun cmd _ ->
+       let cmd_item = Option.get (find_value items cmd) in
+       let checks = translate_checks cmd_item.checks in
+       Printf.printf("no xposts:%b\n%!") (cmd_item.xpostconditions = []);
+       let raises : Ast3.xpost list =
+         (List.map (fun xpost -> {name = xpost.exn; args = xpost.args;
+                                  translation = Result.get_ok xpost.translation}) cmd_item.xpostconditions)
+       in
+       let ensures  = let used = S.find cmd used in
+         List.filter_map (fun (i, (t: term)) -> if (not (I.find i used))
+                           then Some (t.translation |> Result.get_ok)
+                           else None) (enum cmd_item.postconditions) in
+       (*want the whole equals here
+                                                               not just the rhs,
+                                                               probably shouldnt use make_next*)
+       (*need a conjunction of all the ensures with the result name on either side of the equals*)
+       let out : postcond_case = {checks; raises; ensures } in
+       out
+    )
+    cmds 
 
 
 let stm (driver : Drv.t) : Ast3.stm  =

@@ -108,8 +108,6 @@ let type_ ~driver ~ghost (td : Tast.type_declaration) =
   (*line above sets all models and invariants to empty*)
   let process ~type_ (spec : Tast.type_spec) =
     let term_printer = Fmt.str "%a" Tterm_printer.print_term in
-    (*shows up only in the invariant function
-    how is it allowed to use mutability . max??*)
     let mutable_ = Mutability.(max type_.mutable_ (type_spec ~driver spec)) in
     (*mutability is the maximum of the mutability gotten from the driver and the mutability
       in the spec*)
@@ -213,7 +211,7 @@ let axiom ~driver (ax : Tast.axiom) =
   let definition = T.axiom_definition ~driver ~register_name ax.ax_term in
   Drv.add_translation (Axiom { name; loc; register_name; definition }) driver
 
-(*starts with empty driver (from ortac_core.signature)*)
+(*starts with init driver (from ortac_core.signature)*)
 let signature ~driver s =
  (* Printf.printf "\ntast is:\n%s%!" (s |> Tast.sexp_of_signature |> string_of_sexp
                                     ); *)

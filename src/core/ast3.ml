@@ -149,7 +149,25 @@ if checks then conjoin ensures else (match r with Error (Invalid_argument _) -> 
   IN IMPURE CASE
 if checks then
   match r with
- | Error exn -> match exn (cases from expost)
+ | Error exn -> (match exn with
+  Exn1 _ as exn -> (*one of the Exn1 cases have to match, all the ones that do must be true*)
+
+ List.fold_right (fun (truth, matched) (truth_acc, matched_acc) ->
+( truth && truth_acc ,matched || matched_acc)
+  ) [
+  (match exn with
+  Exn1 args1 -> [%e exn1 cases in that same raise, snd ele of tuple]
+  <- edit the rhs to be (_, true)
+  | _ -> (true, false))
+  ; (*sequence them together as a list*)
+  (match exn with
+  Exn1 args2 -> [%e exn1 cases in a DIFFERENT raise for exn1m snd ele of tuple]
+  | _ -> (true, false))] |> (&&)
+
+  | Stack, Out memory -> raise exn 
+
+  | _ -> false
+  )
  | Ok r -> conjoin ensures
   else (match r with Error (Invalid_argument _) -> true | _ -> false)
 
@@ -169,10 +187,16 @@ if checks then
   if raise n then  Error exnn else 
   conjoin of all the ensures unchanged 
 *)
+type xpost = {
+  name : string;
+  args : int;
+  translation : cases; (*Exn _??_ -> rhs *)
+}
+
 type postcond_case =
   {
    checks: expression list;
-   raises: cases; (*start here why is it a cases list list in translated?*)
+   raises: xpost list; 
    ensures: expression list; (*
 start here make this only the right hand sides *)
 (*the expressions that go in here are all the ensures

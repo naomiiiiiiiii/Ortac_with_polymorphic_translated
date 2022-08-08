@@ -26,6 +26,11 @@ type lb_arg =
 
 (* let _ = show_lb_arg Lunit *)
 
+type xpost = (xsymbol * (pattern * term) list) list
+[@@deriving show, sexp_of]
+(*start here why is this a list list?*)
+
+
 type val_spec = { 
   sp_args : lb_arg list;  (** Arguments *)
   sp_ret : lb_arg list;
@@ -33,7 +38,7 @@ type val_spec = {
   sp_pre : term list;  (** Requires Preconditions *)
   sp_checks : term list;  (** Checks preconditions *)
   sp_post : term list;  (** Postconditions *)
-  sp_xpost : (xsymbol * (pattern * term) list) list;
+  sp_xpost : xpost;
       (** Exceptional postconditions. *)
   sp_wr : term list;  (** Writes *)
   sp_cs : term list;  (** Consumes *)

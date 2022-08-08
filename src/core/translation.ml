@@ -430,6 +430,9 @@ let with_constant_checks ~driver ~term_printer checks (constant : constant) =
   let checks = conditions ~driver ~term_printer violated nonexec checks in
   { constant with checks }
 
+(*matches on a pattern_node
+the exception pattern in raises Silly pat -> term
+goes from a Tast.pattern_node to a ppx pattern *)
 let rec xpost_pattern ~driver exn = function
   | Tterm.Papp (ls, []) when Symbols.(ls_equal ls (fs_tuple 0)) -> pvar exn
   | Tterm.Papp (ls, _l) when not (Symbols.is_fs_tuple ls) -> assert false
@@ -441,38 +444,45 @@ let rec xpost_pattern ~driver exn = function
       ppat_alias
         (xpost_pattern ~driver exn p.p_node)
         (noloc (str "%a" Tterm.Ident.pp s.vs_name))
-  | pn -> ppat_construct (lident exn) (Some (pattern pn))
+  | pn -> ppat_construct (lident exn) (Some (pattern pn)) (*the names of the args get included in this pattern*)
 
 let assert_false_case =
   case ~guard:None ~lhs:[%pat? _] ~rhs:[%expr assert false]
 
-let with_xposts ~driver ~term_printer xposts (value : value) =
+let with_xposts ~driver ~term_printer (xposts: (Ttypes.xsymbol *
+                                                (Tterm.pattern * Tterm.term) list) list)
+    (value : value) =
+  (*the second element of xposts is the ptlist in xpost fn below*)
+  print_endline("incoming xposts are:");
+  Core.Sexp.output_hum Stdlib.stdout (Tast.sexp_of_xpost xposts); 
   let register_name = evar value.register_name in
-  let xpost (exn, ptlist) =
-    let name = exn.Ttypes.xs_ident.id_str in
+  (*xpost processes one raises into a case list*)
+  let xpost ((exn : Ttypes.xsymbol), (ptlist : (Tterm.pattern * Tterm.term) list)) =
+    let name : string = exn.Ttypes.xs_ident.id_str in
     let cases =
       List.map
         (fun (p, t) ->
           let s = term_printer t in
-          let nonexec exn = F.spec_failure `XPost ~term:s ~exn ~register_name in
+          let nonexec exn = F.spec_failure `XPost ~term:s ~exn ~register_name in (*just the failure case for turning t into a term*)
           term ~driver nonexec t
-          |> Result.map (fun t ->
+          |> Result.map (fun (t : expression) -> (*turn the term into a case*)
                  case ~guard:None
-                   ~lhs:(xpost_pattern ~driver name p.Tterm.p_node)
+                   ~lhs:(xpost_pattern ~driver name p.Tterm.p_node) (*make an xpost pattern*)
                    ~rhs:
                      [%expr
-                       if not [%e t] then
+                       if not [%e t] then (*for you this should just be [%expr t] because you want
+                                          postcond to simply return false*)
                          [%e F.violated `XPost ~term:s ~register_name]]))
         (* XXX ptlist must be rev because the cases are given in the
-           reverse order by gospel *)
+           reverse order by gospel <- this is false*)
         (List.rev ptlist)
     in
     if List.exists Result.is_error cases then
       List.filter_map (function Ok _ -> None | Error x -> Some x) cases
       |> Result.error
-    else List.map Result.get_ok cases @ [ assert_false_case ] |> Result.ok
+    else List.map Result.get_ok cases @ [ assert_false_case ] |> Result.ok (*case list is never empty, good*)
   in
-  let xpostconditions =
+  let xpostconditions = (*turn each tast xpost into a translated xpost*)
     List.map
       (fun xp ->
         let xs = fst xp in
@@ -483,7 +493,8 @@ let with_xposts ~driver ~term_printer xposts (value : value) =
           | Ttypes.Exn_record _ -> 1
         in
         let translation = xpost xp in
-        { exn; args; translation })
+        { exn; args; translation }) (*keeps the number of args but not what they are
+                                    but doesnt matter because what the args are is stored in the translation*)
       xposts
   in
   { value with xpostconditions }
