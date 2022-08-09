@@ -5,10 +5,6 @@ val init_sut: unit -> t
 (*@ ret = init_sut ()
  ensures ret.contents = 0 *)
 
-val test : int -> int
-(*@ out = test arg
-pure
-ensures out = 0*)
 
 val get : t -> int
 (*@
@@ -19,7 +15,6 @@ ensures v = atom.contents
 
 val set : t -> int -> unit 
 (*@ () = set atom s
-requires get atom  = 5 
 checks s > 0
 modifies atom.contents
 ensures atom.contents = s 

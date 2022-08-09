@@ -9,6 +9,9 @@ module S = Map.Make (String)
 
 let enum = List.mapi (fun i x -> (i, x)) 
 
+let new_name name = let loc = !Ast_helper.default_loc in 
+  Fmt.str "%a" Ident.pp (Ident.create name ~loc)
+
 let unsupported_type s = raise (Failure ("unsupported type: " ^ s ))
 
 let value v = match v with Value v -> v | _ -> raise (Failure "not value")
@@ -94,7 +97,10 @@ let cmd (items: Translated.structure_item list) : Ast3.cmd =
                     args = List.map mk_ocaml_var v.arguments;
                     (*gospel does not allow you to unpack tuples in arguments,
                     so all of these are actually separate*)
-                    ret = List.map mk_ocaml_var v.returns;
+                    ret = (match v.returns with
+                        [] -> [{name = new_name "ret"; label = Nolabel; typ = Unit}]
+                        (*unnamed return : unit*)
+                        | _ :: _ -> List.map mk_ocaml_var v.returns);
                     (*if this is a nonsingleton list then it's a tuple*)
                     pure = v.pure;
                    } acc) with

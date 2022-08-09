@@ -100,7 +100,6 @@ let mk_record ?(og = None) (fields : expression S.t)  =
   pexp_record (List.map (fun (name, exp) -> (lident name, exp)) (S.bindings fields)) og
 
 
-let new_name name = Fmt.str "%a" Ident.pp (Ident.create name ~loc)
 
 (*map helpers*)
 let map_name n = let prefix = if (n <= 3) then "Gen." else "" in
@@ -198,18 +197,18 @@ let mk_cmdres_cases ~state_name:state_name (cmd : Ast3.cmd) (rhs : expression S.
   let mk_res_pat cmd_cstr (cmd_ele : Ast3.cmd_ele) : pattern =
     let (typ, rpat) = match cmd_ele.ret with
       (*start here change this with r_name in mk_postcond if it works*)
-      | [] -> pvar "Unit", ppat_any 
+      | [] -> raise (Failure "unnamed unit return in phase 3") 
       (*start here replace all empty return lists in earlier phase*)
       | [ret] -> pvar (typ_to_str ~args:true ~capitalize:true ret.typ), pvar ret.name
       | _ :: _ -> raise (Failure ("tuple return type in " ^ cmd_cstr ^ " not yet supported")) in
     let typ = if cmd_ele.pure then typ else [%pat? Result ([%p typ], Exn)] in
     [%pat? Res (([%p typ], _), [%p rpat])] in
-  List.map (fun (cmd_cstr, (cmd_ele : cmd_ele)) ->
+  (List.map (fun (cmd_cstr, (cmd_ele : cmd_ele)) ->
       let pattern = ppat_tuple [mk_cmd_pat cmd_cstr cmd_ele; mk_res_pat cmd_cstr cmd_ele] in
      let rhs = S.find cmd_cstr rhs in
      let rhs = [%expr let [%p pvar cmd_ele.targ_name] = [%e evar state_name] in [%e rhs]] in
      case ~lhs:pattern ~guard:None ~rhs)
-    (S.bindings cmd)
+    (S.bindings cmd))@[case ~lhs:ppat_any ~guard:None ~rhs:[%expr false]]
 
 let mk_cmd (cmd : Ast3.cmd) : structure_item =
   let mk_variant (cmd : Ast3.cmd) =
@@ -401,35 +400,40 @@ where each case list is ONE exn_constr clause with arguments packaged.
 let mk_postcond (cmd : Ast3.cmd) (postcond: Ast3.postcond ) ~cmd_name:cmd_name ~state_name:state_name =
   let rhs : expression S.t = S.mapi (fun cmd_cstr (cmd_ele : cmd_ele) ->
       let pc_case = S.find cmd_cstr postcond in
-      let r_name  = match cmd_ele.ret with
-        | [] -> new_name "ret"
+      let r_name  =
+        match cmd_ele.ret with
+        | [] -> raise (Failure "unnamed unit argument in phase 3") 
         (*problem with functions that return unit *)
         | [ret] -> ret.name
         | _ :: _ -> raise (Failure ("tuple return type in " ^ cmd_cstr ^ " not yet supported"))
       in
-      let checks_conj = conjoin pc_case.checks in (*if all the checks then body
-                                               else r = Error Invalid_argument *)
-      let ensures_conj = conjoin pc_case.ensures  in
-      let true_branch = if cmd_ele.pure then ensures_conj else
-          let exn_name = new_name "exn" in
-          let exn_match = pexp_match (evar exn_name) (mk_xpost pc_case.raises exn_name)
-          in
-          (*will it fall through here if an unexpected exception is raised start here*)
+      let ensures_conj = conjoin pc_case.ensures in
+      if cmd_ele.pure then ensures_conj (*no checks, no errors*)
+      else (*could be checks, errors*)
+        let checks_conj = conjoin pc_case.checks in (*if all the checks then
+                                                      body else r = Error
+                                                      Invalid_argument *)
+        let true_branch = if cmd_ele.pure then ensures_conj else
+            let exn_name = Phase2.new_name "exn" in
+            let exn_match = pexp_match (evar exn_name) (mk_xpost pc_case.raises exn_name)
+            in
+            (*will it fall through here if an unexpected exception is raised start here*)
             [%expr match [%e (evar r_name)] with
               | Error [%p pvar exn_name] -> [%e exn_match]
               | Ok [%p pvar r_name] -> [%e ensures_conj] ] in
-      let false_branch = [%expr match [%e evar r_name] with
-        Error (Invalid_argument _) -> true
-        | _ -> false
-      ] in
-[%expr if [%e checks_conj] then [%e true_branch] else [%e false_branch]])
+        let false_branch = [%expr match [%e evar r_name] with
+            Error (Invalid_argument _) -> true
+          | _ -> false
+        ] in
+        [%expr if [%e checks_conj] then [%e true_branch] else [%e false_branch]]
+    )
       cmd
   in
-let res_name = new_name "res" in
-let body = pexp_match (pexp_tuple [(evar cmd_name); (evar res_name)])
-    (mk_cmdres_cases ~state_name:state_name cmd rhs)
+  let res_name = Phase2.new_name "res" in
+  let body = pexp_match (pexp_tuple [(evar cmd_name); (evar res_name)])
+      (mk_cmdres_cases ~state_name:state_name cmd rhs)
   in
-[%stri let postcond [%p pvar cmd_name] [%p pvar state_name] [%p pvar res_name] = [%e body]]
+  [%stri let postcond [%p pvar cmd_name] [%p pvar state_name] [%p pvar res_name] = [%e body]]
 
 
 let structure runtime (stm : Ast3.stm) : Parsetree.structure_item list =
