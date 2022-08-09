@@ -88,7 +88,7 @@ let cmd (items: Translated.structure_item list) : Ast3.cmd =
  in
  let make_stmable (v: Translated.value) =
    ((List.hd v.arguments).name, {v with arguments = (List.tl v.arguments)}) in
- List.fold_right (fun item acc -> match item with
+ let out = List.fold_right (fun item acc -> match item with
       (*need to require here that the first argument is t*)
       | Value v when (is_stmable v) -> (*start here need to enforce that all the values are stmable*)
         let (targ_name, v) = make_stmable v in
@@ -106,7 +106,8 @@ let cmd (items: Translated.structure_item list) : Ast3.cmd =
                    } acc) with
          |`Ok out -> out
          | `Duplicate key -> raise (Failure ("function declared twice: " ^ key)))
-      | _ -> acc) items S.empty
+      | _ -> acc) items S.empty in
+ if (S.cardinal out = 0) then raise (Failure "no functions suitable for api found") else out
 
 let state items : Ast3.state  =
   match List.find_opt (fun s ->

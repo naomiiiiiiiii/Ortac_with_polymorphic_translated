@@ -225,6 +225,7 @@ let mk_cmd (cmd : Ast3.cmd) : structure_item =
 
 
 let mk_state (state: Ast3.state): structure_item  =
+  if (S.cardinal state = 0) then [%stri type state = unit] else
   let mk_record_typ state = Ptype_record (List.map
       (fun (name, typ) -> label_declaration ~name:(noloc name) ~mutable_:Immutable
 ~type_:(typ_to_core_type typ)) (S.bindings state)) in     
@@ -341,7 +342,8 @@ let mk_run m_name (cmd : Ast3.cmd) (run: Ast3.run) ~cmd_name:cmd_name ~sut_name:
 
 
 let mk_init_state (init_state: Ast3.init_state) =
-  [%stri let init_state = [%e mk_record init_state]]
+  [%stri let init_state = [%e if (S.cardinal init_state = 0) then [%expr ()] else 
+           mk_record init_state]]
 
 
 let mk_xpost (xposts: Ast3.xpost list) (exn_name : string) : case list =
@@ -384,7 +386,7 @@ where each case list is ONE exn_constr clause with arguments packaged.
       let rhs  = [%expr List.fold_right
           [%e inner_case_accumulate]
           [%e elist matches]
-          (true, false) |> (&&)
+          (true, false) |> (fun (b1, b2) -> b1 && b2)
       ]
      in (case ~guard:None ~lhs ~rhs)::outer_cases
     ) cases default_cases

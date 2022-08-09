@@ -163,10 +163,10 @@ let with_xposts ~driver (xposts: (Ttypes.xsymbol * (Tterm.pattern * Tterm.term) 
   (* print_endline("incoming xposts are:");
      Core.Sexp.output_hum stdout (Tast.sexp_of_xpost xposts); *)
   (*xpost processes one raises into a case list*)
-  List.fold_right (fun (exn, ptlist) _ ->
+ (* List.fold_right (fun (exn, ptlist) _ ->
       Printf.printf "exception %s has a list of length %d\n%!" exn.Ttypes.xs_ident.id_str
         (List.length ptlist)
-    ) xposts ();
+    ) xposts (); *)
   let xpost ((exn : Ttypes.xsymbol), (ptlist : (Tterm.pattern * Tterm.term) list)) =
     let name : string = exn.Ttypes.xs_ident.id_str in
     let cases =
