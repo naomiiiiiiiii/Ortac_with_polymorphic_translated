@@ -1,0 +1,21 @@
+exception Exn1
+
+(*if silly arg raises Exn1, then 0<= arg <= 10 
+match out with 
+Error Exn1 as e -> 
+(match e with
+Exn1 s1 -> first cond);
+(match e with Exn1 s2 -> snd cond)
+
+checks that both the first and the snd cond hold
+
+you should copy this.
+
+structured this way so that multiple Exn1 clauses 
+with different argument pattern matching can still be checked in conjuction 
+*)
+val silly : int -> int
+(*@ 
+out = silly arg
+raises Exn1 -> 0 <= arg
+raises Exn1 -> arg <= 10 *)

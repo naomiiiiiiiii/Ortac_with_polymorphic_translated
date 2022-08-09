@@ -319,7 +319,6 @@ let postcond items (cmds : cmd) (used: (bool I.t) S.t) : postcond =
     (fun cmd _ ->
        let cmd_item = Option.get (find_value items cmd) in
        let checks = translate_checks cmd_item.checks in
-       Printf.printf("no xposts:%b\n%!") (cmd_item.xpostconditions = []);
        let raises : Ast3.xpost list =
          (List.map (fun xpost -> {name = xpost.exn; args = xpost.args;
                                   translation = Result.get_ok xpost.translation}) cmd_item.xpostconditions)

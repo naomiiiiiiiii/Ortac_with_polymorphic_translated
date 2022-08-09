@@ -155,10 +155,12 @@ if checks then
  List.fold_right (fun (truth, matched) (truth_acc, matched_acc) ->
 ( truth && truth_acc ,matched || matched_acc)
   ) [
+
   (match exn with
   Exn1 args1 -> [%e exn1 cases in that same raise, snd ele of tuple]
   <- edit the rhs to be (_, true)
   | _ -> (true, false))
+
   ; (*sequence them together as a list*)
   (match exn with
   Exn1 args2 -> [%e exn1 cases in a DIFFERENT raise for exn1m snd ele of tuple]
