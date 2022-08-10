@@ -3,7 +3,6 @@ open Ast3
     open Ppxlib
 (* open Builder *)
 
-let test = Ast_traverse.string_constants_of
 
 module Ident = Gospel.Identifier.Ident
 
