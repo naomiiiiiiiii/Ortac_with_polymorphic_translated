@@ -1,5 +1,5 @@
 (executables
- (names exn_test_ex1_3) 
+ (names myexe) 
  (preprocess
   (pps ppx_jane ppx_deriving.show ppxlib.metaquot))
  (libraries
@@ -19,7 +19,6 @@ ortac_stm
 pp_loc
 ppx_jane
   ppxlib.ast)
-  (modules_without_implementation example_exn example_exn1)
 )
 (env
   (dev

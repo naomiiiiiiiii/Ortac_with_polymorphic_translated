@@ -10,6 +10,12 @@ type sil = Translated.structure_item list
 [@@deriving sexp_of]
 
 
+(*you throw out everything except the module name,
+  the translations,
+  the types
+  this is very wasteful.
+*)
+
 type t = {
   module_name : string; (*Example for example.mli
                         dont need this.*)

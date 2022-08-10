@@ -40,7 +40,7 @@ let generate path output =
 that this doesn't work, ask jan*)
 
 let main () =
-   let inpath = "example_exn1.mli" in
+   let inpath = "example_exn.mli" in
    (* let outchannel = stdout in*)
    let channel = stdout in generate inpath channel 
 (* 

@@ -480,7 +480,9 @@ let with_xposts ~driver ~term_printer (xposts: (Ttypes.xsymbol *
     if List.exists Result.is_error cases then
       List.filter_map (function Ok _ -> None | Error x -> Some x) cases
       |> Result.error
-    else List.map Result.get_ok cases @ [ assert_false_case ] |> Result.ok (*case list is never empty, good*)
+    else List.map Result.get_ok cases @ [ assert_false_case ] |> Result.ok (*case list is never empty without the assert_false_case
+assert_false forces execution to halt in the middle of stm test, not what i want.
+need to move that to default only *)
   in
   let xpostconditions = (*turn each tast xpost into a translated xpost*)
     List.map

@@ -1,27 +1,17 @@
-(*go from a TAST into a Dv.driver *)
+(*go from a gospel TAST into a Drv.t *)
 module W = Warnings
   open Types
 
 open Ppxlib
 open Builder
-(* open Sexplib.Std *)
 open Gospel
 module T = Translation
 module Ident = Identifier.Ident
-module F = Failure
-  module Ts = Translated
-
-(*need this so that you can go inside the terms when getting the init state
-out of the post conditions
-only adds ortac frills to constants?. this is not enough becaues the
-  offending ortac frill (integer_of_int) is already there in the tast
-let term_simple ~driver (t: Tterm.term) : expression = 
-  match t.t_node with
-  Tvar *)
+module Ts = Translated
 
 
-(*converts from a TAST term back to a ppx expression.
-  some ortac specific stuff which i am taking out*)
+
+(*translates a TAST term into a ppx expression.*)
 let unsafe_term ~driver (t : Tterm.term) : expression =
   let unsupported m = raise (W.Error (W.Unsupported m, loc)) in
   match t.t_node with
@@ -29,34 +19,14 @@ let unsafe_term ~driver (t : Tterm.term) : expression =
   | _ -> Translation.unsafe_term ~driver:driver t
 
 
-(*start here ask jan put some error catching for when specs fail back
-stm will catch this if a spec fails and tell the user, don't need it in the stm module
-*)
 let bool_term ~driver (_fail : string) t =
   try Ok (unsafe_term ~driver t) with
   W.Error t -> Error t 
- (*  try
-    Ok
-      [%expr
-        try [%e unsafe_term ~driver t] (*try and make this expression*)
-        with e -> (*if it raises an exception
-                  *)
-          raise (Failure [%e estring fail])] (*estring makes the string into an expression
-                                               just like evar makes the string into a variable*)
-     with W.Error t -> Error t *)
 
-
-
-let term_printer  (t : Tterm.term)  =
-  Fmt.str "%a" Tterm_printer.print_term t
-
-(*start here fix this look at translate.ml wtih_invariants*)
-let with_invariants ~driver ~term_printer (self, invariants) (type_ : Ts.type_)  =
-  let silly _one _two _three _four = () in 
-    let _ = (silly driver term_printer self) invariants in
+(*useless right now because gospel -> stm doesn't support type invariants*)
+let with_invariants ~_driver _tuple (type_ : Ts.type_)  =
   { type_ with invariants = [] }
 
-(*do i need to check for dups amongst models? yes, gospel does not check this*)
 let with_models ~driver (fields : (Gospel.Symbols.lsymbol * bool) list)
     (type_: Ts.type_) =
   let has_dup l = let sorted = List.sort String.compare l in
@@ -82,18 +52,14 @@ let type_ ~(driver : Drv.t) ~ghost (td : Tast.type_declaration) : Drv.t =
   let type_ = Ts.type_ ~name ~loc  ~mutable_ ~ghost in
   (*line above sets all models and invariants to empty*)
   let process ~(type_ : Ts.type_) (spec : Tast.type_spec) =
-    let term_printer = Fmt.str "%a" Tterm_printer.print_term in
-    (*shows up only in the invariant function
-    how is it allowed to use mutability . max??*)
     let mutable_ = Mutability.(max (type_.Ts.mutable_) (type_spec ~driver spec)) in
     (*mutability is the maximum of the mutability gotten from the driver and the mutability
       in the spec*)
     let (type_ : Ts.type_) =
       type_
       |> with_models ~driver spec.ty_fields
-      (*add back in the names of the models but nothing else*)
-      |> with_invariants ~driver ~term_printer spec.ty_invariants
-      (*need to support invariants later, start here*)
+      |> with_invariants ~_driver:driver spec.ty_invariants
+      (*need to support invariants, sets to empty for now*)
     in
     { type_ with mutable_ }
   in
@@ -110,7 +76,6 @@ let with_checks ~driver (checks: Tterm.term list) (value : Translated.value): Tr
   let checks =
     List.map
       (fun t ->
-          let txt = term_printer t in
          let loc = t.Tterm.t_loc in 
          let term = bool_term ~driver "checks" t in
          let translations =
@@ -118,9 +83,8 @@ let with_checks ~driver (checks: Tterm.term list) (value : Translated.value): Tr
               (fun exp -> (exp, exp)
               ) (* because you dont need two checks for
                 does raise and doesnt raise invalid_arg
-                                       just get the original check content,
-            should change the check type in Translated i guess
-                   start here
+                                       just get the original check content
+                   this causes the multiple checks error in ortac
                 *)
              term 
          in
@@ -147,26 +111,15 @@ let with_post ~driver ~term_printer pres (value : Translated.value) =
   in
   { value with postconditions }
 
-(*matches on a pattern_node
-the exception pattern in raises Silly pat -> term
-goes from a Tast.pattern_node to a ppx pattern *)
-(*the names of the args get included in this pattern*)
-let xpost_pattern = Translation.xpost_pattern
 
 let assert_false_case =
   case ~guard:None ~lhs:[%pat? _] ~rhs:[%expr false]
 
 (*each exception has multiple patterns, terms*)
+(*the second element of xposts is passed in as the ptlist in xpost fn below*)
 let with_xposts ~driver (xposts: (Ttypes.xsymbol * (Tterm.pattern * Tterm.term) list) list)
     (value : Translated.value) =
-  (*the second element of xposts is the ptlist in xpost fn below*)
-  (* print_endline("incoming xposts are:");
-     Core.Sexp.output_hum stdout (Tast.sexp_of_xpost xposts); *)
   (*xpost processes one raises into a case list*)
- (* List.fold_right (fun (exn, ptlist) _ ->
-      Printf.printf "exception %s has a list of length %d\n%!" exn.Ttypes.xs_ident.id_str
-        (List.length ptlist)
-    ) xposts (); *)
   let xpost ((exn : Ttypes.xsymbol), (ptlist : (Tterm.pattern * Tterm.term) list)) =
     let name : string = exn.Ttypes.xs_ident.id_str in
     let cases =
@@ -175,12 +128,13 @@ let with_xposts ~driver (xposts: (Ttypes.xsymbol * (Tterm.pattern * Tterm.term) 
           bool_term ~driver "xpost" t
           |> Result.map (fun (t : expression) -> (*turn the term into a case*)
                  case ~guard:None
-                   ~lhs:(xpost_pattern ~driver name p.Tterm.p_node) (*make an xpost pattern*)
+                   ~lhs:(Translation.xpost_pattern ~driver name p.Tterm.p_node) (*make an xpost pattern*)
                    ~rhs:t
             ))
         (* XXX ptlist must be rev because the cases are given in the
-           reverse order by gospel *)
-        (List.rev ptlist) (*<- this is never empty even with an exn which is always true*)
+           reverse order by gospel <- false*)
+        (List.rev ptlist) (*<- earlier phase ensures that this is
+                            never empty even with an exn which is always true*)
     in
     if List.exists Result.is_error cases then
       List.filter_map (function Ok _ -> None | Error x -> Some x) cases
