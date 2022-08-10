@@ -2,6 +2,9 @@
 open Ast3
     open Ppxlib
 (* open Builder *)
+
+let test = Ast_traverse.string_constants_of
+
 module Ident = Gospel.Identifier.Ident
 
 module S = Map.Make (String)
@@ -238,6 +241,7 @@ wait lol**)
 (*s is a special variable refering to the old state argument for cmds
   that first argument of type t is always called s*)
 
+
 let make_next_pure 
     (cmd_item: Translated.value) (state: state) (prefix: string) (used : bool I.t) :
   expression S.t * bool I.t =
@@ -245,7 +249,10 @@ let make_next_pure
     (fun field _ (next_state, used) -> 
        if cmd_item.pure then 
          (next_state, used)
-       else let (index_used, rhs) = get_field_rhs ~error:cmd_item.name cmd_item.postconditions field prefix in
+       else let (index_used, rhs) = get_field_rhs
+                ~error:cmd_item.name
+                cmd_item.postconditions field prefix in
+         (*need to check here that rhs doesn't use the return name*)
          assert(I.find index_used used = false);
         (S.add field rhs next_state, I.add index_used true used)
         )

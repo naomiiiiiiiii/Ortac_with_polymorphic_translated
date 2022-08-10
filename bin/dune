@@ -19,6 +19,7 @@ ortac_stm
 pp_loc
 ppx_jane
   ppxlib.ast)
+(modules_without_implementation scoping_test)
 )
 (env
   (dev

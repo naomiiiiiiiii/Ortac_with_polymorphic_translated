@@ -280,12 +280,11 @@ let mk_arb_cmd (cmd: Ast3.cmd) (arb_cmd: Ast3.arb_cmd) =
   in
   [%stri let arb_cmd _s = [%e body]]
 
-
-(*start here can't use the variable s as could be bound for the arguments
-ortac does something about this where it doesnt let you reuse variable names for args
-globally*)
-  (*start here make it support old and some of the fields not being listed,
-  only the ones which are modified are listed*)
+(*  let next_state (c: cmd) (s: state) = match cmd_name with
+    cmd_constr -> if <all the requires and all the checks>
+    then <correct ending state as specified by (find next_state cmd_constr)>
+    else s
+*)
 let mk_next_state (cmd: Ast3.cmd) (next_state : Ast3.next_state) (state : state) ~state_name:state_name
   ~cmd_name:cmd_name =
   let state_var = evar state_name in

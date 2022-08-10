@@ -10,6 +10,9 @@ module Ident = Identifier.Ident
 module Ts = Translated
 
 
+let term_printer ?(v = true) _text _global_loc (t : Tterm.term)  =
+  if v then () else ();
+  Fmt.str "%a" Tterm_printer.print_term t
 
 (*translates a TAST term into a ppx expression.*)
 let unsafe_term ~driver (t : Tterm.term) : expression =
@@ -73,6 +76,7 @@ let types ~driver ~ghost =
 
  
 let with_checks ~driver (checks: Tterm.term list) (value : Translated.value): Translated.value =
+  let txt = "silly" in
   let checks =
     List.map
       (fun t ->
@@ -154,8 +158,7 @@ let with_xposts ~driver (xposts: (Ttypes.xsymbol * (Tterm.pattern * Tterm.term) 
           | Ttypes.Exn_record _ -> 1
         in
         let translation = xpost xp in
-        { exn; args; translation }) (*keeps the number of args but not what they are
-                                    but doesnt matter because what the args are is stored in the translation*)
+        { exn; args; translation })
       xposts
   in
   { value with xpostconditions }
@@ -167,8 +170,8 @@ let value ~driver ~ghost (vd : Tast.val_description) =
   let register_name = "hoho register name" in
   let arguments = List.map (Translate.var_of_arg ~driver:driver) vd.vd_args in
   (*extracts name, label, and type of the argument. sets modified and consumed to false.
-potentially changes the name so as not to clash with anything else in scope?
-    using the pretty printer for ident
+potentially changes the name of args so as not to clash with anything else in scope
+    (using the pretty printer for ident)
   *)
   let returns = List.map (Translate.var_of_arg ~driver:driver) vd.vd_ret in
   let pure = false in
@@ -179,16 +182,16 @@ potentially changes the name so as not to clash with anything else in scope?
   let process ~value (spec : Tast.val_spec) =
   (*  print_endline("sp_text is");
       print_endline(spec.sp_text); *)
-    let term_printer = term_printer  in
+    let term_printer = term_printer spec.sp_text spec.sp_loc in
     let value =
       value
       |> with_checks ~driver spec.sp_checks 
       |> with_pre ~driver ~term_printer spec.sp_pre
       |> with_post ~driver ~term_printer spec.sp_post
       |> with_xposts ~driver spec.sp_xpost
-        (*throw all of these out for now start here
-      |> with_consumes spec.sp_cs
-          |> with_modified spec.sp_wr *)
+      (*gospel -> stm does not currently support these
+        |> with_consumes spec.sp_cs
+        |> with_modified spec.sp_wr *)
     in
     { value with pure = spec.sp_pure }
   in
@@ -199,16 +202,14 @@ potentially changes the name so as not to clash with anything else in scope?
     if value.pure then
       let ls = Drv.get_ls driver [ name ] in
       Drv.add_function ls name driver
-      (*only pure functions get added to the driver function list ...*)
+      (* the driver function list contains the functions which can be used in later specifications.
+         exclusively pure functions. *)
     else driver
   in
-  (* Translated.print_term (List.hd value.preconditions); *)
   Drv.add_translation value_item driver
 
 (*starts with empty driver (from ortac_core.signature)*)
 let signature ~driver s : Drv.t =
-  (* Printf.printf "\ntast is:\n%s%!" (s |> Tast.sexp_of_signature |> string_of_sexp
-                                     ); *)
   List.fold_left
     (fun driver (sig_item : Tast.signature_item) ->
        match sig_item.sig_desc with
