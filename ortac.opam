@@ -33,6 +33,7 @@ depends: [
   "ppxlib" {>= "0.26.0"}
   "ppx_jane" {>= "0.15.0"}
   "core"     {>= "0.15.0"}
+  "qcheck"   {>= "0.19.1"}
   "gospel"
   "alcotest" {with-test}
   "pprint" {with-test}
