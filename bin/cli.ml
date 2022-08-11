@@ -14,9 +14,7 @@ let frontend_parser = function
   | s -> Error (`Msg (Fmt.str "Error: `%s' is not a valid argument" s))
 
 let main frontend input output () =
-  print_endline("15");
   let channel = get_channel output in
-  print_endline("16");
   try
     match frontend with
     | Default -> Ortac_default.generate input channel
