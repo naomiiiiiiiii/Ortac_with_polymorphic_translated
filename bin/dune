@@ -1,11 +1,9 @@
-(executables
- (names myexe) 
- (preprocess
-  (pps ppx_jane ppx_deriving.show ppxlib.metaquot))
+(executable
+ (name cli)
+ (public_name ortac)
+ (package ortac)
  (libraries
-qcheck 
-ocaml-compiler-libs.shadow  
-cmdliner
+  cmdliner
   fmt
   fmt.cli
   fmt.tty
@@ -13,16 +11,5 @@ cmdliner
   ortac_default
   ortac_core
   ortac_monolith
-ortac_runtime
-ortac_stm 
   ppxlib
-pp_loc
-ppx_jane
-  ppxlib.ast)
-)
-(env
-  (dev
-    (flags (:standard -w -27 -w -32 -w -34 -w -33
-	-w -26 -w -11
-))))
-
+  ppxlib.ast))
