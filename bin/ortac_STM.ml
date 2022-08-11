@@ -1,7 +1,7 @@
 open Ortac_core
 
 
-module S = Map.Make (String)
+(* module S = Map.Make (String) *)
 
 
 let signature ~runtime ~module_name namespace (s : Gospel.Tast.signature) =
@@ -14,7 +14,7 @@ let signature ~runtime ~module_name namespace (s : Gospel.Tast.signature) =
   (* print_endline("translations after phase 1 are:");
      Core.Sexp.output_hum stdout (Drv.sexp_of_sil translated.translations); *)
   let stm =  Phase2.stm translated in
-  Phase3.structure runtime stm 
+  Phase3.structure runtime stm
 (*      (map_of_list [("field1", Ast3.List Ast3.Integer);
                                           ("field2", Ast3.String)])
                                           in
@@ -32,21 +32,4 @@ let generate path output =
     Core.Sexp.output_hum stdout (Gospel.Tast.sexp_of_signature sigs); *)
     signature ~runtime:"Ortac_runtime" ~module_name (List.hd env)
       sigs
-     |> Fmt.pf output "%a@." Ppxlib_ast.Pprintast.structure 
-
-
-
-(* let _ = Cli.main Cli.Default path None () <-- so annoying
-that this doesn't work, ask jan*)
-
-let main () =
-   let inpath = "atom.mli" in
-   (* let outchannel = stdout in*)
-   let channel = stdout in generate inpath channel 
-(* 
-  (try Ortac_default.generate inpath outchannel
-  with Gospel.Warnings.Error e ->
-    Fmt.epr "%a@." Gospel.Warnings.pp e;
-    exit 1) *)
-
-let _  = main ()
+     |> Fmt.pf output "%a@." Ppxlib_ast.Pprintast.structure
