@@ -144,8 +144,40 @@ let stdlib =
     ([ "Gospelstdlib"; "Array"; "for_all" ], "Ortac_runtime.Array.for_all");
   ]
 
+let stdlib_stm =
+  [
+    ([ "None" ], "None");
+    ([ "Some" ], "Some");
+    ([ "[]" ], "[]");
+    ([ "infix ::" ], "(::)");
+    ([ "infix =" ], "(=)");
+    ([ "prefix !" ], "!");
+    ([ "Gospelstdlib"; "infix +" ], "Z.add");
+    ([ "Gospelstdlib"; "infix -" ], "Z.sub");
+    ([ "Gospelstdlib"; "infix *" ], "Z.mul");
+    ([ "Gospelstdlib"; "infix /" ], "Z.div");
+    ([ "Gospelstdlib"; "mod" ], "Z.rem");
+    ([ "Gospelstdlib"; "pow" ], "Z.pow");
+    ([ "Gospelstdlib"; "logand" ], "Z.logand");
+    ([ "Gospelstdlib"; "prefix -" ], "Z.neg");
+    ([ "Gospelstdlib"; "infix >" ], "Z.gt");
+    ([ "Gospelstdlib"; "infix >=" ], "Z.geq");
+    ([ "Gospelstdlib"; "infix <" ], "Z.lt");
+    ([ "Gospelstdlib"; "infix <=" ], "Z.leq");
+    ([ "Gospelstdlib"; "integer_of_int" ], "Z.of_int");
+    ([ "Gospelstdlib"; "abs" ], "Z.abs");
+    ([ "Gospelstdlib"; "min" ], "Z.min");
+    ([ "Gospelstdlib"; "max" ], "Z.max");
+    ([ "Gospelstdlib"; "succ" ], "Z.succ");
+    ([ "Gospelstdlib"; "pred" ], "Z.pred");
+    ([ "Gospelstdlib"; "Array"; "make" ], "Ortac_runtime.Array.make");
+    ([ "Gospelstdlib"; "Array"; "length" ], "Ortac_runtime.Array.length");
+    ([ "Gospelstdlib"; "Array"; "get" ], "Ortac_runtime.Array.get");
+    ([ "Gospelstdlib"; "Array"; "for_all" ], "Ortac_runtime.Array.for_all");
+  ]
+
 (*maybe driver is just to keep track of what is supported?*)
-let _init module_name env =
+let init module_name env =
   let stdlib =
     List.fold_left
       (fun acc (path, ocaml) ->
@@ -162,7 +194,7 @@ let _init module_name env =
   in
   { module_name; stdlib; env; translations = []; types; functions = L.empty }
 
-let init module_name env =
+let init_stm module_name env =
   let stdlib =
     List.fold_left
       (fun acc (path, ocaml) ->
@@ -170,7 +202,7 @@ let init module_name env =
          L.add ls ocaml acc)
       L.empty stdlib in
   {module_name; stdlib = stdlib; env; translations = []; types = T.empty;
-                            functions = L.empty }
+   functions = L.empty }
 
 let map_translation ~f t = List.rev_map f t.translations
 let iter_translation ~f t = List.iter f (List.rev t.translations)

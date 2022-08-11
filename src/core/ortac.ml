@@ -4,3 +4,4 @@ let signature ~runtime ~module_name namespace s =
   Report.emit_warnings Fmt.stderr translated;
   (*ok so I guess here all the warnings are caught, this is what they do with the warnings*)
   Generate.structure runtime translated
+

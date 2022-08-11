@@ -437,22 +437,25 @@ let mk_postcond (cmd : Ast3.cmd) (postcond: Ast3.postcond ) ~cmd_name:cmd_name ~
   [%stri let postcond [%p pvar cmd_name] [%p pvar state_name] [%p pvar res_name] = [%e body]]
 
 
-let structure runtime (stm : Ast3.stm) : Parsetree.structure_item list =
-  (*  Drv.print_ udriver ; *)
+let structure _runtime (stm : Ast3.stm) : Parsetree.structure_item list =
   let incl : Parsetree.structure_item =
     (pmod_ident (lident stm.module_name) |> include_infos |> pstr_include) in
   (*include statement for the user module*)
-  let second : Parsetree.structure_item = pstr_module
+  (* 
+  let ortac_runtime : Parsetree.structure_item = pstr_module
       (module_binding
          ~name:{ txt = Some "Ortac_runtime"; loc }
-         ~expr:(pmod_ident (lident runtime))) (*module Ortac_runtime = Ortac_runtime
-                                              do i need this?*)
-  in
+         ~expr:(pmod_ident (lident runtime))) in*)
+  let at = [%stri module AT = STM.Make(CConf)] in 
+  let tests = [%stri let _ = QCheck_runner.run_tests_main
+                         (let count,name = 1000,"atomic test" in
+                          [AT.agree_test     ~count ~name;
+                           AT.agree_test_par ~count ~name;])] in 
   let open1 = open_infos ~expr:(pmod_ident (lident "QCheck")) ~override:Fresh |> pstr_open in
   let open2 = open_infos ~expr:(pmod_ident (lident "STM")) ~override:Fresh |> pstr_open in
   let sut = pstr_type Recursive [type_declaration ~name:(noloc "sut") ~params:[] ~cstrs:[]
                                    ~kind:Ptype_abstract ~private_:Public
-                                   ~manifest:(Some (ptyp_constr (lident (stm.module_name ^ ".t")) []))] in
+                                   ~manifest:(Some (ptyp_constr (lident (stm.module_name ^ ".t")) []))] in 
   let state = mk_state stm.state in
   let cmd = mk_cmd stm.cmd in
   let cmd_name = Fmt.str "%a" Ident.pp (Ident.create "c" ~loc) in
@@ -466,7 +469,11 @@ let structure runtime (stm : Ast3.stm) : Parsetree.structure_item list =
   let run = mk_run stm.module_name stm.cmd stm.run ~cmd_name ~sut_name in
   let init_state = mk_init_state stm.init_state in
   let precond = mk_precond stm.cmd stm.precond ~state_name ~cmd_name in
-  let postcond = mk_postcond stm.cmd stm.postcond ~cmd_name ~state_name in 
-  [incl;second; open1; open2; sut ; state; cmd; init_sut; cleanup; arb_cmd;
-next_state; run; init_state; precond; postcond]
+  let postcond = mk_postcond stm.cmd stm.postcond ~cmd_name ~state_name in
+  let cconf = pstr_module
+      (module_binding ~name:(Some "CConf" |> noloc)
+         ~expr:(pmod_structure [sut ; state; cmd; init_sut; cleanup; arb_cmd;
+                                next_state; run; init_state; precond; postcond])
+                          ) in 
+  [incl; open1; open2; cconf; at; tests]
 

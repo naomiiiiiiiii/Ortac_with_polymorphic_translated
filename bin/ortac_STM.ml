@@ -5,7 +5,7 @@ open Ortac_core
 
 
 let signature ~runtime ~module_name namespace (s : Gospel.Tast.signature) =
-  let driver = Drv.init module_name namespace in
+  let driver = Drv.init_stm module_name namespace in
   let (translated: Drv.t) = Phase1.signature ~driver s in (*switch must be in here
            let vsname (vs : Symbols.vsymbol) = Fmt.str "%a" Tast.Ident.pp vs.vs_name
 

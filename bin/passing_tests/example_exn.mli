@@ -19,7 +19,7 @@ raises Exn1 -> arg1 = 1
 (*both this and the one below should be true*)
 raises Exn1 -> arg1 = 2
 raises Exn2 i
-raises Exn3 i -> 42=42 | Exn3 _ -> 54 =54 
+raises Exn3 0 -> 42=42 | Exn3 _ -> 54 =54 
 (*same match, evaluated like a normal match,
 only matched cases are true*) 
 ensures t_arg.contents = 1
